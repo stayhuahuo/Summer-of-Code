@@ -18,17 +18,22 @@ void AInteractiveActor::BeginPlay()
 	Super::BeginPlay();
 
 	widget = SNew(SScatterWidget);
-	TSharedRef<SWindow> win = SNew(SWindow)
-		.Title(FText::FromString(TEXT("hello")))
+	win = SNew(SWindow)
+		.Title(FText::FromString(TEXT("Scatter window")))
 		.ClientSize(FVector2D(200, 600))
 		.ScreenPosition(FVector2D(100, 100))
 		[
 			widget.ToSharedRef()
 		];
-	FSlateApplication::Get().AddWindow(win);
+	FSlateApplication::Get().AddWindow(win.ToSharedRef());
+	win->BringToFront(true);
+
 
 	widget.Get()->divide_image_button.BindLambda([this](FString path) {
 		DivideArea(path);
+		});
+	widget.Get()->set_texture.BindLambda([this](UTexture2D* t) {
+		texture = t;
 		});
 
 	widget.Get()->sub_area_combobox.BindLambda([this](FString subarea) {
@@ -97,11 +102,18 @@ void AInteractiveActor::BeginPlay()
 		});
 }
 
+void AInteractiveActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	FSlateApplication::Get().RequestDestroyWindow(win.ToSharedRef());
+	win.Reset();
+}
+
 // Called every frame
 void AInteractiveActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
 }
 
 void AInteractiveActor::DivideArea(FString path)

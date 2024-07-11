@@ -38,7 +38,8 @@ public class Scatter : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				"InputCore"
+				"InputCore",
+				"ImageWrapper" 
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

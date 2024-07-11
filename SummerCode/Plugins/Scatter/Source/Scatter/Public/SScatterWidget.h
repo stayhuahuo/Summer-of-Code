@@ -12,6 +12,8 @@ DECLARE_DELEGATE_TwoParams(DistributionParams, FString, double);
 DECLARE_DELEGATE_TwoParams(TransformParams, FString, double);
 DECLARE_DELEGATE(CalculateTextureButtonClick);
 
+DECLARE_DELEGATE_OneParam(SetActorTexture, UTexture2D*);
+
 /**
  * 
  */
@@ -29,6 +31,8 @@ public:
 	TArray <TSharedPtr<FString>>* GetSubAreas();
 	FText GetCurSubArea() const;
 	void OnSelectedSubAreaChanged(TSharedPtr<FString> NewValue, ESelectInfo::Type Info);
+	void OnDivideButtonClicked();
+	UTexture2D* LoadTextureFromFile(FString& path);
 
 	//给InteractiveActor调用的委托
 	DivideImageButtonClick divide_image_button;
@@ -38,8 +42,10 @@ public:
 	TransformParams transform_spinbox;
 	CalculateTextureButtonClick calculate_texture_button;
 
+	//后续改，临时用
+	SetActorTexture set_texture;
 
-
+	UTexture2D* t = nullptr;
 	//相关参数
 	TArray<TSharedPtr<FString>> area_array;
 	FText selected_sub_area;

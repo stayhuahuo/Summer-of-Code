@@ -60,10 +60,10 @@ class SCATTER_API AInteractiveActor : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AInteractiveActor();
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:	
 	// Called every frame
@@ -80,12 +80,15 @@ public:
 
 	TArray<SubAreaInfo> infos;
 	SubAreaInfo current_info;
+	
+	TSharedPtr<SWindow> win;
+
+	UPROPERTY(BlueprintReadWrite)
+	UTexture2D* texture = nullptr;
 
 	UPROPERTY(BlueprintReadWrite)
 	TArray<UTexture*> all_images;
 
-	UPROPERTY(BlueprintReadWrite)
-	UTexture* texture = nullptr;
 
 	UPROPERTY(BlueprintReadWrite)
 	UMaterialInterface* material = nullptr;

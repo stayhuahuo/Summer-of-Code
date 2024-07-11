@@ -4,6 +4,8 @@
 #include "SScatterWidget.h"
 #include "SlateOptMacros.h"
 #include "Widgets/Input/SSpinBox.h"
+#include "IImageWrapper.h"
+#include "IImageWrapperModule.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SScatterWidget::Construct(const FArguments& InArgs)
@@ -49,9 +51,20 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 											.Text(FText::FromString("Select Divide Image"))
 											.DesiredSizeScale(1)
 											.OnClicked_Lambda([this]()->FReply {
-											divide_image_button.Execute(TEXT("Divide Image Path"));
+											FString p = FPaths::ProjectDir() + TEXT("Content/DivideImage/Colormask_0_01.png");
+											t = LoadTextureFromFile(p);
+											set_texture.Execute(t);
+
+											//OnDivideButtonClicked();
 											return FReply::Handled();
 												})
+										//SNew(SButton)
+										//	.Text(FText::FromString("Select Divide Image"))
+										//	.DesiredSizeScale(1)
+										//	.OnClicked_Lambda([this]()->FReply {
+										//	divide_image_button.Execute(TEXT("Divide Image Path"));
+										//	return FReply::Handled();
+										//		})
 									]
 									+ SVerticalBox::Slot()
 									.HAlign(HAlign_Center)
@@ -598,5 +611,83 @@ void SScatterWidget::OnSelectedSubAreaChanged(TSharedPtr<FString> NewValue, ESel
 {
 	this->selected_sub_area = FText::FromString(*NewValue);
 	sub_area_combobox.Execute(*NewValue);
+}
+
+void SScatterWidget::OnDivideButtonClicked()
+{
+	TSharedRef<SWindow> NewWindow = SNew(SWindow)
+		.Title(FText::FromString("Select an Image"))
+		.ClientSize(FVector2D(800, 600))
+		.SupportsMinimize(false)
+		.SupportsMaximize(false);
+
+	// 获取本地文件路径中的图片资源
+	TArray<FString> ImagePaths = { TEXT("Content/DivideImage/Colormask_0_01.png"), 
+		TEXT("Content/DivideImage/Colormask_0_03.png") }; 
+
+	TSharedRef<SHorizontalBox> HorizontalBox = SNew(SHorizontalBox);
+
+	for (FString& ImagePath : ImagePaths)
+	{
+		TSharedPtr<SImage> ImageWidget;
+		FString path = FPaths::ProjectDir() + ImagePath;
+		UTexture2D* Texture = LoadTextureFromFile(path);
+
+		if (Texture)
+		{
+			TSharedPtr<FSlateBrush> ImageBrush = MakeShareable(new FSlateBrush());
+			ImageBrush->SetResourceObject(Texture);
+
+			HorizontalBox->AddSlot()
+				[
+					SNew(SBox)
+						.WidthOverride(200)
+						.HeightOverride(200)
+						[
+							SNew(SImage)
+								.Image(ImageBrush.Get())
+						]
+				];
+		}
+	}
+
+	NewWindow->SetContent(HorizontalBox);
+
+	// 将窗口添加到 Slate 应用程序中
+	FSlateApplication::Get().AddWindow(NewWindow);
+
+	// 确保窗口在最前方显示
+	NewWindow->BringToFront();
+}
+
+UTexture2D* SScatterWidget::LoadTextureFromFile(FString& path)
+{
+	UTexture2D* Texture = nullptr;
+
+	//加载图片为纹理
+	TArray<uint8> RawFileData;
+	if (FFileHelper::LoadFileToArray(RawFileData, *path))
+	{
+		IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+		EImageFormat ImageFormat = ImageWrapperModule.DetectImageFormat(RawFileData.GetData(), RawFileData.Num());
+
+		if (ImageFormat != EImageFormat::Invalid)
+		{
+			TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
+			if (ImageWrapper.IsValid() && ImageWrapper->SetCompressed(RawFileData.GetData(), RawFileData.Num()))
+			{
+				TArray<uint8> UncompressedBGRA;
+				if (ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, UncompressedBGRA))
+				{
+					Texture = UTexture2D::CreateTransient(ImageWrapper->GetWidth(), ImageWrapper->GetHeight());
+					void* TextureData = Texture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+					FMemory::Memcpy(TextureData, UncompressedBGRA.GetData(), UncompressedBGRA.Num());
+					Texture->PlatformData->Mips[0].BulkData.Unlock();
+					Texture->UpdateResource();
+				}
+			}
+		}
+	}
+	return Texture;
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
