@@ -22,34 +22,19 @@ struct SubAreaInfo
 	FString fill_image_path;
 	UTexture2D* fill_image = nullptr;
 
-	//群落密度
-	double community_density_value = 1;
+	//影响texture参数：群落密度、聚丛大小、聚丛噪声、聚丛模糊
+	TMap<FString, double> textrue_para = { {FString("community_density_value"),1} ,{FString("poly_size"),1},
+											{FString("poly_noise"),1}, {FString("poly_blur"),1} };
 
-	//聚丛
-	double poly_size = 1;//大小
-	double poly_noise = 1;//噪声
-	double poly_blur = 1;//模糊
+	//影响mesh参数：缩放、旋转、偏移
+	TMap<FString, double> mesh_para = { {FString("random_scale_min"),0.5} ,{FString("random_scale_max"),1.5},
+										{FString("random_X_rotation_min"),-5}, {FString("random_X_rotation_max"),5},
+										{FString("random_Y_rotation_min"),-5}, {FString("random_Y_rotation_max"),5},
+										{FString("random_Z_rotation_min"),0}, {FString("random_Z_rotation_max"),360},
+										{FString("random_X_rotation_min"),-25}, {FString("random_X_rotation_max"),25},
+										{FString("random_Y_rotation_min"),-25}, {FString("random_Y_rotation_max"),25},
+										{FString("random_Z_rotation_min"),0}, {FString("random_Z_rotation_max"),0} };
 
-	//随机变换
-	//缩放
-	double random_scale_min = 0.5;
-	double random_scale_max = 1.5;
-
-	//旋转
-	double random_X_rotation_min = -5;
-	double random_X_rotation_max = 5;
-	double random_Y_rotation_min = -5;
-	double random_Y_rotation_max = 5;
-	double random_Z_rotation_min = 0;
-	double random_Z_rotation_max = 360;
-
-	//偏移
-	double random_X_displacement_min = -25;
-	double random_X_displacement_max = 25;
-	double random_Y_displacement_min = -25;
-	double random_Y_displacement_max = 25;
-	double random_Z_displacement_min = 0;
-	double random_Z_displacement_max = 0;
 };
 
 UCLASS(Blueprintable)
@@ -74,6 +59,22 @@ public:
 	void FillArea(SubAreaInfo info);
 
 	void CalculateTexture(SubAreaInfo info);
+
+	//通过路径获取单张图片将之转化成Texture2D
+	UFUNCTION(BlueprintCallable, Category = "Image")
+	UTexture2D* LoadTexture2D(const FString path);
+
+	//获取指定路径下的所有图片的名称，类似于XX.JPG
+	UFUNCTION(BlueprintCallable, Category = "Image")
+	TArray<FString> GetFolderFiles(FString path);
+
+	//将指定路径下的所有图片转化成Texture2D
+	UFUNCTION(BlueprintCallable, Category = "Image")
+	TArray<UTexture2D*> GetAllImageFromFiles(FString Paths);
+
+	//判断图片类型，png,jpg
+	TSharedPtr<class IImageWrapper> GetImageWrapperByExtention(const FString Path);
+
 
 public:
 	TSharedPtr<SScatterWidget> widget;

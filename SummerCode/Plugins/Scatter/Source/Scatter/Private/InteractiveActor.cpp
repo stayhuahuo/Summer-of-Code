@@ -3,20 +3,30 @@
 
 #include "InteractiveActor.h"
 #include "Widgets/SWeakWidget.h"
+#include "IImageWrapper.h"
+#include "IImageWrapperModule.h"
+
+#if WITH_OPENCV
+#include "PreOpenCVHeaders.h"
+#include "opencv2/opencv.hpp"
+#include "PostOpenCVHeaders.h"
+#endif
+
+
 
 // Sets default values
 AInteractiveActor::AInteractiveActor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	
 }
 
 // Called when the game starts or when spawned
 void AInteractiveActor::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	widget = SNew(SScatterWidget);
 	win = SNew(SWindow)
 		.Title(FText::FromString(TEXT("Scatter window")))
@@ -32,7 +42,10 @@ void AInteractiveActor::BeginPlay()
 	widget.Get()->divide_image_button.BindLambda([this](FString path) {
 		DivideArea(path);
 		});
+
 	widget.Get()->set_texture.BindLambda([this](UTexture2D* t) {
+		GEngine->AddOnScreenDebugMessage(1, 5, FColor::Black, TEXT("e"));
+		int a = 0;
 		texture = t;
 		});
 
@@ -50,51 +63,19 @@ void AInteractiveActor::BeginPlay()
 		});
 
 	widget.Get()->distribute_spinbox.BindLambda([this](FString category, double value) {
-		if (category == "density")
-			current_info.community_density_value = value;
-		else if(category == "size")
-			current_info.poly_size = value;
-		else if (category == "noise")
-			current_info.poly_noise = value;
-		else if (category == "blur")
-			current_info.poly_blur = value;
+		*current_info.textrue_para.Find(category) = value;
+		int a = 1;
 		});
 
 	widget.Get()->transform_spinbox.BindLambda([this](FString category, double value) {
-		if (category == "scalemin")
-			current_info.random_scale_min = value;
-		else if (category == "scalemax")
-			current_info.random_scale_max = value;
-		else if (category == "rotationXmin")
-			current_info.random_X_rotation_min = value;
-		else if (category == "rotationXmax")
-			current_info.random_X_rotation_max= value;
-		else if (category == "rotationYmin")
-			current_info.random_Y_rotation_min = value;
-		else if (category == "rotationYmax")
-			current_info.random_Y_rotation_max = value;
-		else if (category == "rotationZmin")
-			current_info.random_Z_rotation_min = value;
-		else if (category == "rotationZmax")
-			current_info.random_Z_rotation_max = value;
-		else if (category == "displacementXmin")
-			current_info.random_X_displacement_min = value;
-		else if (category == "displacementXmax")
-			current_info.random_X_displacement_max = value;
-		else if (category == "displacementYmin")
-			current_info.random_Y_displacement_min = value;
-		else if (category == "displacementYmax")
-			current_info.random_Y_displacement_max = value;
-		else if (category == "displacementZmin")
-			current_info.random_Z_displacement_min = value;
-		else if (category == "displacementZmax")
-			current_info.random_Z_displacement_max = value;
+		*current_info.mesh_para.Find(category) = value;
+		int a = 1;
 		});
-
+	
 	widget.Get()->calculate_texture_button.BindLambda([this]() {
 		CalculateTexture(current_info);
 
-
+		
 
 
 		FString MaterialPath = TEXT("Material'/Game/DivideImage/0001.0001'");
@@ -119,7 +100,7 @@ void AInteractiveActor::Tick(float DeltaTime)
 void AInteractiveActor::DivideArea(FString path)
 {
 	//输入图片路径，解析图片后，传给ComputeShader
-
+	
 	//ComputeShader计算后返回一张分区图
 	//再将这张分区图划分为若干区域图（暂定2张
 
@@ -144,3 +125,69 @@ void AInteractiveActor::CalculateTexture(SubAreaInfo info)
 	//通过info中各种参数计算最终纹理
 }
 
+UTexture2D* AInteractiveActor::LoadTexture2D(const FString path)
+{
+	UTexture2D* Texture = nullptr;
+	if (!FPlatformFileManager::Get().GetPlatformFile().FileExists(*path))
+	{
+		return nullptr;
+	}
+	TArray<uint8> RawFileData;
+	if (!FFileHelper::LoadFileToArray(RawFileData, *path))
+	{
+		return nullptr;
+	}
+	TSharedPtr<IImageWrapper> ImageWrapper = GetImageWrapperByExtention(path);
+	if (ImageWrapper.IsValid() && ImageWrapper->SetCompressed(RawFileData.GetData(), RawFileData.Num()))
+	{
+		TArray<uint8> UncompressedRGBA;
+		if (ImageWrapper->GetRaw(ERGBFormat::RGBA, 8, UncompressedRGBA))
+		{
+			Texture = UTexture2D::CreateTransient(ImageWrapper->GetWidth(), ImageWrapper->GetHeight(), PF_R8G8B8A8);
+			if (Texture != nullptr)
+			{
+				void* TextureData = Texture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+				FMemory::Memcpy(TextureData, UncompressedRGBA.GetData(), UncompressedRGBA.Num());
+				Texture->PlatformData->Mips[0].BulkData.Unlock();
+				Texture->UpdateResource();
+			}
+		}
+	}
+	return Texture;
+}
+
+TArray<FString> AInteractiveActor::GetFolderFiles(FString path)
+{
+	TArray<FString> files;
+	FPaths::NormalizeDirectoryName(path);
+	IFileManager& FileManager = IFileManager::Get();
+	FString FinalPath = path / TEXT("*");
+	FileManager.FindFiles(files, *FinalPath, true, true);
+	return files;
+}
+
+TArray<UTexture2D*> AInteractiveActor::GetAllImageFromFiles(FString Paths)
+{
+	TArray<FString> ImgPaths = GetFolderFiles(Paths);
+	TArray<UTexture2D*> Texture2DArr;
+	for (auto path : ImgPaths)
+	{
+		UTexture2D* Texture2D = LoadTexture2D(Paths + "/" + path);
+		Texture2DArr.Add(Texture2D);
+	}
+	return Texture2DArr;
+}
+
+TSharedPtr<class IImageWrapper> AInteractiveActor::GetImageWrapperByExtention(const FString Path)
+{
+	IImageWrapperModule& module = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+	if (Path.EndsWith(".png"))
+	{
+		return module.CreateImageWrapper(EImageFormat::PNG);
+	}
+	if (Path.EndsWith(".jpg"))
+	{
+		return module.CreateImageWrapper(EImageFormat::JPEG);
+	}
+	return nullptr;
+}

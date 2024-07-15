@@ -34,6 +34,10 @@ public:
 	void OnDivideButtonClicked();
 	UTexture2D* LoadTextureFromFile(FString& path);
 
+
+
+
+
 	//给InteractiveActor调用的委托
 	DivideImageButtonClick divide_image_button;
 	SelectSubArea sub_area_combobox;

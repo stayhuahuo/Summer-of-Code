@@ -26,9 +26,12 @@ public class Scatter : ModuleRules
 			new string[]
 			{
 				"Core",
+				"OpenCVHelper",
+				"OpenCV"
+
 				// ... add other public dependencies that you statically link with here ...
 			}
-			);
+            );
 			
 		
 		PrivateDependencyModuleNames.AddRange(
@@ -39,7 +42,7 @@ public class Scatter : ModuleRules
 				"Slate",
 				"SlateCore",
 				"InputCore",
-				"ImageWrapper" 
+				"ImageWrapper",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

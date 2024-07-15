@@ -54,6 +54,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 											FString p = FPaths::ProjectDir() + TEXT("Content/DivideImage/Colormask_0_01.png");
 											t = LoadTextureFromFile(p);
 											set_texture.Execute(t);
+											//fill_image_button.Execute(TEXT("Fill Image Path"));
 
 											//OnDivideButtonClicked();
 											return FReply::Handled();
@@ -338,7 +339,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(0)
 																	.Value(-5)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("rotationXmin"), value);
+																	//transform_spinbox.Execute(FString("rotationXmin"), value);
 																	//random_X_rotation_min = value;
 																		})
 
@@ -690,4 +691,5 @@ UTexture2D* SScatterWidget::LoadTextureFromFile(FString& path)
 	}
 	return Texture;
 }
+
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
