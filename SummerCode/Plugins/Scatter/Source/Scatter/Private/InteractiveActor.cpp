@@ -42,7 +42,7 @@ void AInteractiveActor::BeginPlay()
 
 	widget.Get()->divide_image_button.BindLambda([this](UTexture2D* t) {
 		divide_image = DivideArea(t);
-		divide_image = t;
+		//divide_image = t;
 		});
 
 	widget.Get()->sub_area_combobox.BindLambda([this](FString subarea) {
@@ -99,10 +99,25 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t)
 	//SubAreaInfo数由label中数据的种类决定
 
 	//此处需要初始化infos，需要将kmeans输出数组编码为ue中的texture2D并返回
+	//从UTexture2D读取字节数据
+	FTexture2DMipMap* mip_map = &t->PlatformData->Mips[0];
+	FByteBulkData* raw_ImData = &mip_map->BulkData;
+	uint8* pixels = static_cast<uint8*>(raw_ImData->Lock(LOCK_READ_ONLY));
 
 	//原图的Mat
-	cv::Mat src;// = UTexture2D; //从UE纹理转化成 cv::Mat
+	cv::Mat src = { t->GetSizeX(),t->GetSizeY(),CV_8UC4,pixels };// = UTexture2D; //从UE纹理转化成 cv::Mat
+	//默认为RGBA
+	cv::cvtColor(src,src,cv::COLOR_RGBA2RGB);
+	
+	//不同的图大小不一样，需要做Resize
+	float scale = 2048.0f / src.cols;
+	cv::resize(src,src,cv::Size(2048,src.rows*scale));
+	
+	
+	raw_ImData->Unlock();
+	
 	int clusterCount = 4;  //需要被分类的个数，为4
+
 
 
 	int width = src.cols;
@@ -111,28 +126,15 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t)
 
 	// 初始化定义
 	int sampleCount = width * height;  //总像素点
-	cv::Mat points(sampleCount, dims, CV_32F, cv::Scalar(0));
+	cv::Mat points;
+	src.convertTo(points, CV_32F);
+	points = points.reshape(1, sampleCount);
 	//points(像素点的数量，像素点用于聚类的属性数量，类型，颜色)
 	// 最终 cols = 像素点的数量，rows = 像素点用于聚类的属性数量 = 3，即使用rgb三个通道聚类
 	//Scalar是将图像设置成单一灰度和颜色
 	//例如：Scalar(0)为黑色，Scalar(255)为白色，Scalar(0, 255, 0)为绿色
 	cv::Mat labels; //存储聚类后的类别id，数据类型为 int 
-	cv::Mat centers(clusterCount, 1, points.type());  //用来存储聚类后的中心点
-
-	// 把图片的三通道RBG数据转到样本数据中，即挨个像素赋索引值
-	int index = 0;
-	for (int row = 0; row < height; row++)
-	{
-		for (int col = 0; col < width; col++)
-		{
-			index = row * width + col;  //为每个像素点赋索引值，一行一行的进行
-			cv::Vec3b bgr = src.at<cv::Vec3b>(row, col);// 8U 类型的 RGB 彩色图像可以使用 <Vec3b>
-			points.at<float>(index, 0) = static_cast<int>(bgr[0]);  //通道的B分量
-			points.at<float>(index, 1) = static_cast<int>(bgr[1]);
-			points.at<float>(index, 2) = static_cast<int>(bgr[2]);
-			//cv::mat的成员函数： .at(int y， int x)可以用来存取图像中对应坐标为（x，y）的元素坐标。
-		}
-	}
+	cv::Mat centers;  //用来存储聚类后的中心点
 
 	// 运行K-Means
 	cv::TermCriteria criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 10, 0.1);
@@ -143,9 +145,9 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t)
 		// maxCount：即最大迭代次数。
 		// epsilon：即要求的收敛阈值。
 	cv::kmeans(points, clusterCount, labels, criteria, 3, cv::KMEANS_PP_CENTERS, centers);
-
+	centers = centers.reshape(dims, clusterCount);
 	// 显示图像分割结果：将样本中分好类的像素赋值给result图片，三通道赋值
-	cv::Mat result(sampleCount, dims, CV_32S); //将分类结果还原回图片的二维数组
+	cv::Mat result(width, height, CV_32S); //将分类结果还原回图片的二维数组
 	for (int row = 0; row < height; row++)
 	{
 		for (int col = 0; col < width; col++)
@@ -153,16 +155,41 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t)
 			result.at<int>(row,col) = labels.at<int>(row * width + col, 0);
 		}
 	}
-
+	// 创建聚类结果图像
+	cv::Mat output(src.size(), src.type());
+	for (int32 y = 0; y < src.rows; y++)
+	{
+		for (int32 x = 0; x < src.cols; x++)
+		{
+			const int32 cluster_idx = labels.at<int32>(y * src.cols + x);
+			auto&& center = centers.at<cv::Vec3f>(cluster_idx);
+			auto pixel = { static_cast<uchar>(center[0]), static_cast<uchar>(center[1]), static_cast<uchar>(center[2]) };
+			output.at<cv::Vec3b>(y, x) = pixel;
+		}
+	}
+	
+	//此处可以查看结果
+	imwrite("./res.png", output);
+	//重新调回颜色格式
+	cv::cvtColor(output, output, cv::COLOR_RGB2RGBA);
 	//先写死，等待上述代码补全
 	SubAreaInfo info1;
 	info1.id = 0;
 	info1.subarea = FString("SubArea 1");
 	infos.Add(info1);
 
-	return nullptr;
-	
-
+	//将结果重新作为UTexture2D返回
+	UTexture2D* Texture = UTexture2D::CreateTransient(width, height, PF_R8G8B8A8);
+	if (Texture != nullptr)
+	{
+		void* TextureData = Texture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+		FMemory::Memcpy(TextureData, output.data, width*height*4);
+		
+		Texture->PlatformData->Mips[0].BulkData.Unlock();
+		Texture->UpdateResource();
+	}
+	return Texture;
+   
 	
 	//SubAreaInfo info2;
 	//info1.subarea = FString("SubArea 2");
@@ -181,6 +208,7 @@ void AInteractiveActor::CalculateTexture(SubAreaInfo info)
 	//通过info中各种参数及info.samples_texture计算最终纹理scatter_texture
 	scatter_texture = divide_image;
 }
+
 
 UTexture2D* AInteractiveActor::LoadTexture2D(const FString path)
 {
