@@ -14,6 +14,10 @@
 
 ![image-20240711232253758](readme.assets/image-20240711232253758.png)
 
+
+
+![image-20240715101759294](./readme.assets/image-20240715101759294.png)
+
 ## 2. Resize
 
 等比缩放到宽为特定值。
