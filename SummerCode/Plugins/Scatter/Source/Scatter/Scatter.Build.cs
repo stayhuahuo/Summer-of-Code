@@ -10,6 +10,7 @@ public class Scatter : ModuleRules
 		
 		PublicIncludePaths.AddRange(
 			new string[] {
+                "Core", "CoreUObject", "Engine", "InputCore","OpenCV", "OpenCVHelper"
 				// ... add public include paths required here ...
 			}
 			);

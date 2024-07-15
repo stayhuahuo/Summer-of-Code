@@ -100,6 +100,59 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t)
 
 	//此处需要初始化infos，需要将kmeans输出数组编码为ue中的texture2D并返回
 
+	//原图的Mat
+	cv::Mat src;// = UTexture2D; //从UE纹理转化成 cv::Mat
+	int clusterCount = 4;  //需要被分类的个数，为4
+
+
+	int width = src.cols;
+	int height = src.rows;
+	int dims = src.channels();
+
+	// 初始化定义
+	int sampleCount = width * height;  //总像素点
+	cv::Mat points(sampleCount, dims, CV_32F, cv::Scalar(0));
+	//points(像素点的数量，像素点用于聚类的属性数量，类型，颜色)
+	// 最终 cols = 像素点的数量，rows = 像素点用于聚类的属性数量 = 3，即使用rgb三个通道聚类
+	//Scalar是将图像设置成单一灰度和颜色
+	//例如：Scalar(0)为黑色，Scalar(255)为白色，Scalar(0, 255, 0)为绿色
+	cv::Mat labels; //存储聚类后的类别id，数据类型为 int 
+	cv::Mat centers(clusterCount, 1, points.type());  //用来存储聚类后的中心点
+
+	// 把图片的三通道RBG数据转到样本数据中，即挨个像素赋索引值
+	int index = 0;
+	for (int row = 0; row < height; row++)
+	{
+		for (int col = 0; col < width; col++)
+		{
+			index = row * width + col;  //为每个像素点赋索引值，一行一行的进行
+			cv::Vec3b bgr = src.at<cv::Vec3b>(row, col);// 8U 类型的 RGB 彩色图像可以使用 <Vec3b>
+			points.at<float>(index, 0) = static_cast<int>(bgr[0]);  //通道的B分量
+			points.at<float>(index, 1) = static_cast<int>(bgr[1]);
+			points.at<float>(index, 2) = static_cast<int>(bgr[2]);
+			//cv::mat的成员函数： .at(int y， int x)可以用来存取图像中对应坐标为（x，y）的元素坐标。
+		}
+	}
+
+	// 运行K-Means
+	cv::TermCriteria criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 10, 0.1);
+
+		// 1）TermCriteria::COUNT 最大迭代次数；
+		// 2）TermCriteria::EPS 要求的收敛阈值；
+		// 3）TermCriteria::COUNT + TermCriteria::EPS 达到2个条件之一即可。
+		// maxCount：即最大迭代次数。
+		// epsilon：即要求的收敛阈值。
+	cv::kmeans(points, clusterCount, labels, criteria, 3, cv::KMEANS_PP_CENTERS, centers);
+
+	// 显示图像分割结果：将样本中分好类的像素赋值给result图片，三通道赋值
+	cv::Mat result(sampleCount, dims, CV_32S); //将分类结果还原回图片的二维数组
+	for (int row = 0; row < height; row++)
+	{
+		for (int col = 0; col < width; col++)
+		{
+			result.at<int>(row,col) = labels.at<int>(row * width + col, 0);
+		}
+	}
 
 	//先写死，等待上述代码补全
 	SubAreaInfo info1;
