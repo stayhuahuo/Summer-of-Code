@@ -213,7 +213,6 @@ public:
      */
     NousImage& frequency_filter(uint32 kernel_size)
     {
-
         return *this;
     }
     /**
@@ -221,7 +220,6 @@ public:
      */
     NousImage& color_adsorption(uint32 threshold)
     {
-
         return *this;
     }
 
@@ -231,14 +229,16 @@ public:
         std::filesystem::path mask_file_path = std::filesystem::u8path(msg.begin(), msg.end());
         cv::Mat mask_image = cv::imread(mask_file_path.generic_string(), cv::IMREAD_COLOR);
         cv::resize(mask_image, mask_image, cv::Size(width(), height()));
-        //imwrite("C:\\Users\\Administrator\\Desktop\\code\\mask.png", mask_image);
-        //cv::Mat result = m_image.clone();
         cv::bitwise_and(mask_image,m_image,m_image);
-        //m_image.copyTo(m_image,mask_image);
-       // m_image = result;
         return *this;
     }
-
+    NousImage& color_mask(NousImage& mask_image) {
+        if (height() != mask_image.height() || width() != mask_image.width()) {
+            mask_image.resize(width(),height());
+        }
+        cv::bitwise_and(mask_image.m_image,m_image,m_image);
+        return *this;
+    }
 };
 
 
@@ -359,17 +359,9 @@ void AInteractiveActor::FillArea(SubAreaInfo info)
     path = "C:\\Users\\Administrator\\Desktop\\code\\2.png";
    // NousImage image(std::filesystem::u8path(path.begin(), path.end()));
     //image.save("C:\\Users\\Administrator\\Desktop\\code\\res.png");
-	
     NousImage image(path);
     image.color_mask("D:\\Project\\Summer-of-Code\\SummerCode\\Content\\FillImage\\patches1_clamp_mask.png");
     image.save("C:\\Users\\Administrator\\Desktop\\code\\res.png");
-    
-	//auto handle_a = cv::imread(TCHAR_TO_ANSI(*path),cv::IMREAD_COLOR);
-	//auto handle_b = cv::imread(TCHAR_TO_ANSI(*path), cv::IMREAD_COLOR);
-	//cv::bitwise_and(handle_a,handle_b,handle_a,handle_b);
-	
-	//cv::kmeans();
-	
 }
 
 void AInteractiveActor::CalculateTexture(SubAreaInfo info)
