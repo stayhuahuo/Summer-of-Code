@@ -58,6 +58,7 @@ public:
 	void FillArea(SubAreaInfo info);
 
 	void CalculateTexture(SubAreaInfo info);
+	
 
 	//通过路径获取单张图片将之转化成Texture2D
 	UFUNCTION(BlueprintCallable, Category = "Image")
