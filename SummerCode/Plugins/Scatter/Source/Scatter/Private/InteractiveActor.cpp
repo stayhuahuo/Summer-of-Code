@@ -19,7 +19,8 @@ AInteractiveActor::AInteractiveActor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	
+
+
 }
 
 // Called when the game starts or when spawned
@@ -36,20 +37,16 @@ void AInteractiveActor::BeginPlay()
 			widget.ToSharedRef()
 		];
 	FSlateApplication::Get().AddWindow(win.ToSharedRef());
-	win->BringToFront(true);
+	//win->BringToFront(true);
 
 
-	widget.Get()->divide_image_button.BindLambda([this](FString path) {
-		DivideArea(path);
-		});
-
-	widget.Get()->set_texture.BindLambda([this](UTexture2D* t) {
-		GEngine->AddOnScreenDebugMessage(1, 5, FColor::Black, TEXT("e"));
-		int a = 0;
-		texture = t;
+	widget.Get()->divide_image_button.BindLambda([this](UTexture2D* t) {
+		divide_image = DivideArea(t);
+		divide_image = t;
 		});
 
 	widget.Get()->sub_area_combobox.BindLambda([this](FString subarea) {
+		//current_info = i;
 		for (auto i : infos)
 		{
 			if (i.subarea == subarea)
@@ -57,19 +54,18 @@ void AInteractiveActor::BeginPlay()
 		}
 		});
 
-	widget.Get()->fill_image_button.BindLambda([this](FString path) {
-		current_info.fill_image_path = path;
+	widget.Get()->fill_image_button.BindLambda([this](UTexture2D* t) {
+		current_info.fill_image = t;
 		FillArea(current_info);
 		});
 
 	widget.Get()->distribute_spinbox.BindLambda([this](FString category, double value) {
-		*current_info.textrue_para.Find(category) = value;
 		int a = 1;
+		*current_info.textrue_para.Find(category) = value;
 		});
 
 	widget.Get()->transform_spinbox.BindLambda([this](FString category, double value) {
 		*current_info.mesh_para.Find(category) = value;
-		int a = 1;
 		});
 	
 	widget.Get()->calculate_texture_button.BindLambda([this]() {
@@ -78,8 +74,8 @@ void AInteractiveActor::BeginPlay()
 		
 
 
-		FString MaterialPath = TEXT("Material'/Game/DivideImage/0001.0001'");
-		material = LoadObject<UMaterialInterface>(nullptr, *MaterialPath);
+		//FString MaterialPath = TEXT("Material'/Game/DivideImage/0001.0001'");
+		//material = LoadObject<UMaterialInterface>(nullptr, *MaterialPath);
 		});
 }
 
@@ -97,16 +93,24 @@ void AInteractiveActor::Tick(float DeltaTime)
 	
 }
 
-void AInteractiveActor::DivideArea(FString path)
+UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t)
 {
-	//输入图片路径，解析图片后，传给ComputeShader
-	
-	//ComputeShader计算后返回一张分区图
-	//再将这张分区图划分为若干区域图（暂定2张
+	//此处调opencv对传入t进行颜色聚类，完成后返回两个数组，分别为label类别信息（int）、像素本身RGB
+	//SubAreaInfo数由label中数据的种类决定
 
-	//SubAreaInfo info1;
-	//info1.subarea = FString("SubArea 1");
-	//infos.Add(info1);
+	//此处需要初始化infos，需要将kmeans输出数组编码为ue中的texture2D并返回
+
+
+	//先写死，等待上述代码补全
+	SubAreaInfo info1;
+	info1.id = 0;
+	info1.subarea = FString("SubArea 1");
+	infos.Add(info1);
+
+	return nullptr;
+	
+
+	
 	//SubAreaInfo info2;
 	//info1.subarea = FString("SubArea 2");
 	//infos.Add(info2);
@@ -115,14 +119,14 @@ void AInteractiveActor::DivideArea(FString path)
 
 void AInteractiveActor::FillArea(SubAreaInfo info)
 {
-	FString path = info.fill_image_path;
-	//通过path，读本地图给info.fillimage
-	//用fillimage和子区域图求交，得到采样点图samples_texture
+	//用currentinfo.fillimage和divide_image求交，得到采样点图info.samples_texture
+
 }
 
 void AInteractiveActor::CalculateTexture(SubAreaInfo info)
 {
-	//通过info中各种参数计算最终纹理
+	//通过info中各种参数及info.samples_texture计算最终纹理scatter_texture
+	scatter_texture = divide_image;
 }
 
 UTexture2D* AInteractiveActor::LoadTexture2D(const FString path)

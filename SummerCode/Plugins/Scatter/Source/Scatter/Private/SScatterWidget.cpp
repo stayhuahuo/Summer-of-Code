@@ -6,10 +6,22 @@
 #include "Widgets/Input/SSpinBox.h"
 #include "IImageWrapper.h"
 #include "IImageWrapperModule.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Slate/DeferredCleanupSlateBrush.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SScatterWidget::Construct(const FArguments& InArgs)
 {
+	FString p = FPaths::ProjectDir() + TEXT("Content/DivideImage/Colormask_0_01.png");
+	divide_texture = LoadTextureFromFile(p);
+	divide_brush.SetResourceObject(divide_texture);
+	divide_brush.ImageSize = FVector2D(32, 32);
+
+	p = FPaths::ProjectDir() + TEXT("Content/FillImage/patches1_clamp_mask.png");
+	fill_texture = LoadTextureFromFile(p);
+	fill_brush.SetResourceObject(fill_texture);
+	fill_brush.ImageSize = FVector2D(32, 32);
+
 	//分区选择下拉框
 	TSharedPtr<SComboBox<TSharedPtr<FString>>> sub_areas_combobox = 
 		SNew(SComboBox<TSharedPtr<FString>>)
@@ -47,18 +59,50 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 									.VAlign(VAlign_Top)
 									.AutoHeight()
 									[
-										SNew(SButton)
-											.Text(FText::FromString("Select Divide Image"))
-											.DesiredSizeScale(1)
-											.OnClicked_Lambda([this]()->FReply {
-											FString p = FPaths::ProjectDir() + TEXT("Content/DivideImage/Colormask_0_01.png");
-											t = LoadTextureFromFile(p);
-											set_texture.Execute(t);
+										SNew(SHorizontalBox)
+											+ SHorizontalBox::Slot()
+											.HAlign(HAlign_Left)
+											.VAlign(VAlign_Top)
+											.AutoWidth()
+											[
+												SNew(SVerticalBox)
+													+ SVerticalBox::Slot()
+													.HAlign(HAlign_Center)
+													.VAlign(VAlign_Top)
+													.AutoHeight()
+													[
+														SNew(SImage).Image(&divide_brush)
+													]
+													+ SVerticalBox::Slot()
+													.HAlign(HAlign_Center)
+													.VAlign(VAlign_Top)
+													.AutoHeight()
+													[
+														SNew(SButton)
+														.Text(FText::FromString("Select Divide Image"))
+														.DesiredSizeScale(1)
+														.OnClicked_Lambda([this]()->FReply {
+														divide_image_button.Execute(divide_texture);
+														//OnDivideButtonClicked();
+														return FReply::Handled();
+															})
+													]
+
+
+											]
+
+										//SNew(SButton)
+										//	.Text(FText::FromString("Select Divide Image"))
+										//	.DesiredSizeScale(1)
+										//	.OnClicked_Lambda([this]()->FReply {
+										//	FString p = FPaths::ProjectDir() + TEXT("Content/DivideImage/Colormask_0_01.png");
+										//	t = LoadTextureFromFile(p);
+										//	set_texture.Execute(t);
 											//fill_image_button.Execute(TEXT("Fill Image Path"));
 
 											//OnDivideButtonClicked();
-											return FReply::Handled();
-												})
+											//return FReply::Handled();
+											//	})
 										//SNew(SButton)
 										//	.Text(FText::FromString("Select Divide Image"))
 										//	.DesiredSizeScale(1)
@@ -99,13 +143,35 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 									.VAlign(VAlign_Top)
 									.AutoHeight()
 									[
-										SNew(SButton)
-											.Text(FText::FromString("Select Fill Image"))
-											.DesiredSizeScale(1)
-											.OnClicked_Lambda([this]()->FReply {
-											fill_image_button.Execute(TEXT("Fill Image Path"));
-											return FReply::Handled();
-												})
+										SNew(SHorizontalBox)
+											+ SHorizontalBox::Slot()
+											.HAlign(HAlign_Left)
+											.VAlign(VAlign_Top)
+											.AutoWidth()
+											[
+												SNew(SVerticalBox)
+													+ SVerticalBox::Slot()
+													.HAlign(HAlign_Center)
+													.VAlign(VAlign_Top)
+													.AutoHeight()
+													[
+														SNew(SImage).Image(&fill_brush)
+													]
+													+ SVerticalBox::Slot()
+													.HAlign(HAlign_Center)
+													.VAlign(VAlign_Top)
+													.AutoHeight()
+													[
+
+														SNew(SButton)
+															.Text(FText::FromString("Select Fill Image"))
+															.DesiredSizeScale(1)
+															.OnClicked_Lambda([this]()->FReply {
+															fill_image_button.Execute(fill_texture);
+															return FReply::Handled();
+																})
+													]
+											]
 									]
 							]
 							+ SVerticalBox::Slot()
@@ -131,7 +197,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 											.MaxValue(10000)
 											.Value(1)
 											.OnEndSliderMovement_Lambda([this](double value) {
-											distribute_spinbox.Execute(FString("density"), value);
+											distribute_spinbox.Execute(FString("community_density_value"), value);
 											//community_density_value = value;
 												})
 									]
@@ -152,7 +218,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 											.MaxValue(10000)
 											.Value(1)
 											.OnEndSliderMovement_Lambda([this](double value) {
-											distribute_spinbox.Execute(FString("size"), value);
+											distribute_spinbox.Execute(FString("poly_size"), value);
 											//poly_size = value;
 												})
 									]
@@ -173,7 +239,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 											.MaxValue(10000)
 											.Value(1)
 											.OnEndSliderMovement_Lambda([this](double value) {
-											distribute_spinbox.Execute(FString("noise"), value);
+											distribute_spinbox.Execute(FString("poly_noise"), value);
 											//poly_noise = value;
 												})
 									]
@@ -194,7 +260,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 											.MaxValue(10000)
 											.Value(1)
 											.OnEndSliderMovement_Lambda([this](double value) {
-											distribute_spinbox.Execute(FString("blur"), value);
+											distribute_spinbox.Execute(FString("poly_blur"), value);
 											//poly_blur = value;
 												})
 									]
@@ -268,7 +334,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(1)
 																	.Value(0.5)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("scalemin"), value);
+																	transform_spinbox.Execute(FString("random_scale_min"), value);
 																	//random_scale_min = value;
 																		})
 
@@ -283,7 +349,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(2)
 																	.Value(1.5)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("scalemax"), value);
+																	transform_spinbox.Execute(FString("random_scale_max"), value);
 																	//random_scale_max = value;
 																		})
 															]
@@ -339,7 +405,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(0)
 																	.Value(-5)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	//transform_spinbox.Execute(FString("rotationXmin"), value);
+																	transform_spinbox.Execute(FString("random_X_rotation_min"), value);
 																	//random_X_rotation_min = value;
 																		})
 
@@ -354,7 +420,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(360)
 																	.Value(5)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("rotationXmax"), value);
+																	transform_spinbox.Execute(FString("random_X_rotation_max"), value);
 																	//random_X_rotation_max = value;
 																		})
 															]
@@ -375,7 +441,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(0)
 																	.Value(-5)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("rotationYmin"), value);
+																	transform_spinbox.Execute(FString("random_Y_rotation_min"), value);
 																	//random_Y_rotation_min = value;
 																		})
 
@@ -390,7 +456,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(360)
 																	.Value(5)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("rotationYmax"), value);
+																	transform_spinbox.Execute(FString("random_Y_rotation_max"), value);
 																	//random_Y_rotation_max = value;
 																		})
 															]
@@ -411,7 +477,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(0)
 																	.Value(0)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("rotationZmin"), value);
+																	transform_spinbox.Execute(FString("random_Z_rotation_min"), value);
 																	//random_Z_rotation_min = value;
 																		})
 
@@ -426,7 +492,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(360)
 																	.Value(360)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("rotationZmax"), value);
+																	transform_spinbox.Execute(FString("random_Z_rotation_max"), value);
 																	//random_Z_rotation_max = value;
 																		})
 															]
@@ -482,7 +548,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(0)
 																	.Value(-25)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("displacementXmin"), value);
+																	transform_spinbox.Execute(FString("random_X_rotation_min"), value);
 																	//random_X_displacement_min = value;
 																		})
 
@@ -497,7 +563,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(100)
 																	.Value(25)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("displacementXmax"), value);
+																	transform_spinbox.Execute(FString("random_X_rotation_max"), value);
 																	//random_X_displacement_max = value;
 																		})
 															]
@@ -518,7 +584,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(0)
 																	.Value(-25)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("displacementYmin"), value);
+																	transform_spinbox.Execute(FString("random_Y_rotation_min"), value);
 																	//random_Y_displacement_min = value;
 																		})
 
@@ -533,7 +599,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(100)
 																	.Value(25)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("displacementYmax"), value);
+																	transform_spinbox.Execute(FString("random_Y_rotation_max"), value);
 																	//random_Y_displacement_max = value;
 																		})
 															]
@@ -554,7 +620,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(0)
 																	.Value(0)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("displacementZmin"), value);
+																	transform_spinbox.Execute(FString("random_Z_rotation_min"), value);
 																	//random_Z_displacement_min = value;
 																		})
 
@@ -569,7 +635,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 																	.MaxValue(100)
 																	.Value(0)
 																	.OnEndSliderMovement_Lambda([this](double value) {
-																	transform_spinbox.Execute(FString("displacementZmax"), value);
+																	transform_spinbox.Execute(FString("random_Z_rotation_max"), value);
 																	//random_Z_displacement_max = value;
 																		})
 															]

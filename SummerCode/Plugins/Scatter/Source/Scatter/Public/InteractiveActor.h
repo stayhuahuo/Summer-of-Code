@@ -9,18 +9,17 @@
 
 struct SubAreaInfo
 {
+	//子区域id
+	int id;
+
 	//子区域名字
 	FString subarea;
 
-	//子区域图
-	//FTexture after_divide_texture;
+	//填充图像
+	UTexture2D* fill_image = nullptr;
 
 	//采样点图
-	//FTexture samples_texture;
-
-	//填充图像
-	FString fill_image_path;
-	UTexture2D* fill_image = nullptr;
+	UTexture2D* samples_texture = nullptr;
 
 	//影响texture参数：群落密度、聚丛大小、聚丛噪声、聚丛模糊
 	TMap<FString, double> textrue_para = { {FString("community_density_value"),1} ,{FString("poly_size"),1},
@@ -54,7 +53,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void DivideArea(FString path);
+	UTexture2D* DivideArea(UTexture2D* t);
 
 	void FillArea(SubAreaInfo info);
 
@@ -84,15 +83,19 @@ public:
 	
 	TSharedPtr<SWindow> win;
 
-	UPROPERTY(BlueprintReadWrite)
-	UTexture2D* texture = nullptr;
+	UTexture2D* divide_image = nullptr;
 
 	UPROPERTY(BlueprintReadWrite)
-	TArray<UTexture*> all_images;
+	UTexture2D* scatter_texture = nullptr;
 
 
-	UPROPERTY(BlueprintReadWrite)
-	UMaterialInterface* material = nullptr;
+
+	//UPROPERTY(BlueprintReadWrite)
+	//TArray<UTexture*> all_images;
+
+
+	//UPROPERTY(BlueprintReadWrite)
+	//UMaterialInterface* material = nullptr;
 
 
 

@@ -5,14 +5,12 @@
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
 
-DECLARE_DELEGATE_OneParam(DivideImageButtonClick, FString);
+DECLARE_DELEGATE_OneParam(DivideImageButtonClick, UTexture2D*);
 DECLARE_DELEGATE_OneParam(SelectSubArea, FString);
-DECLARE_DELEGATE_OneParam(FillImageButtonClick, FString);
+DECLARE_DELEGATE_OneParam(FillImageButtonClick, UTexture2D*);
 DECLARE_DELEGATE_TwoParams(DistributionParams, FString, double);
 DECLARE_DELEGATE_TwoParams(TransformParams, FString, double);
 DECLARE_DELEGATE(CalculateTextureButtonClick);
-
-DECLARE_DELEGATE_OneParam(SetActorTexture, UTexture2D*);
 
 /**
  * 
@@ -35,6 +33,18 @@ public:
 	UTexture2D* LoadTextureFromFile(FString& path);
 
 
+	UPROPERTY()
+	UTexture2D* divide_texture;
+	UPROPERTY()
+	UTexture2D* fill_texture;
+
+
+
+	UPROPERTY()
+	FSlateBrush divide_brush;
+	UPROPERTY()
+	FSlateBrush fill_brush;
+
 
 
 
@@ -46,10 +56,6 @@ public:
 	TransformParams transform_spinbox;
 	CalculateTextureButtonClick calculate_texture_button;
 
-	//后续改，临时用
-	SetActorTexture set_texture;
-
-	UTexture2D* t = nullptr;
 	//相关参数
 	TArray<TSharedPtr<FString>> area_array;
 	FText selected_sub_area;
