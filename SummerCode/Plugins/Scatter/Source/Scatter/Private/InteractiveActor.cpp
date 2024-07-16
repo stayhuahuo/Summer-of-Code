@@ -182,8 +182,7 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t, int k)
 	//此处可以查看结果
 	imwrite("./res.png", output);
 	//重新调回颜色格式
-	cv::cvtColor(output, output, cv::COLOR_RGB2RGBA);
-	//先写死，等待上述代码补全
+	cv::cvtColor(output, output, cv::COLOR_RGB2BGRA);
 
 	//将结果重新作为UTexture2D返回
 	UTexture2D* Texture = UTexture2D::CreateTransient(width, height, PF_R8G8B8A8);
