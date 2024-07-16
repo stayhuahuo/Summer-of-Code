@@ -26,8 +26,13 @@ public class Scatter : ModuleRules
 			new string[]
 			{
 				"Core",
+				"CoreUObject",
 				"OpenCVHelper",
-				"OpenCV"
+				"OpenCV",
+				"Engine",
+				"RHI",	
+				"RenderCore",
+				
 
 				// ... add other public dependencies that you statically link with here ...
 			}
