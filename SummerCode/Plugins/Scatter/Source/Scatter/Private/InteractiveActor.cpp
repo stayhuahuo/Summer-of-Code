@@ -30,9 +30,8 @@ void AInteractiveActor::BeginPlay()
 	
 	widget = SNew(SScatterWidget);
 	win = SNew(SWindow)
-		.Title(FText::FromString(TEXT("Scatter window")))
-		.ClientSize(FVector2D(200, 600))
-		.ScreenPosition(FVector2D(100, 100))
+		.Title(FText::FromString(TEXT("Scatter")))
+		.ClientSize(FVector2D(250, 650))
 		[
 			widget.ToSharedRef()
 		];
@@ -42,11 +41,9 @@ void AInteractiveActor::BeginPlay()
 
 	widget.Get()->divide_image_button.BindLambda([this](UTexture2D* t) {
 		divide_image = DivideArea(t);
-		//divide_image = t;
 		});
 
 	widget.Get()->sub_area_combobox.BindLambda([this](FString subarea) {
-		//current_info = i;
 		for (auto i : infos)
 		{
 			if (i.subarea == subarea)
@@ -60,7 +57,6 @@ void AInteractiveActor::BeginPlay()
 		});
 
 	widget.Get()->distribute_spinbox.BindLambda([this](FString category, double value) {
-		int a = 1;
 		*current_info.textrue_para.Find(category) = value;
 		});
 
@@ -93,7 +89,7 @@ void AInteractiveActor::Tick(float DeltaTime)
 	
 }
 
-UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t)
+UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t, int k)
 {
 	//此处调opencv对传入t进行颜色聚类，完成后返回两个数组，分别为label类别信息（int）、像素本身RGB
 	//SubAreaInfo数由label中数据的种类决定
@@ -148,13 +144,20 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t)
 	centers = centers.reshape(dims, clusterCount);
 	// 显示图像分割结果：将样本中分好类的像素赋值给result图片，三通道赋值
 	cv::Mat result(width, height, CV_32S); //将分类结果还原回图片的二维数组
+	
+	TMap<int,FVector3f> map;
 	for (int row = 0; row < height; row++)
 	{
 		for (int col = 0; col < width; col++)
 		{
+			map.Add(labels.at<int>(row * width + col), FVector3f(0, 0, 0));
 			result.at<int>(row,col) = labels.at<int>(row * width + col, 0);
+			
 		}
 	}
+
+
+
 	// 创建聚类结果图像
 	cv::Mat output(src.size(), src.type());
 	for (int32 y = 0; y < src.rows; y++)
@@ -163,20 +166,24 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t)
 		{
 			const int32 cluster_idx = labels.at<int32>(y * src.cols + x);
 			auto&& center = centers.at<cv::Vec3f>(cluster_idx);
+			if (*map.Find(cluster_idx) == FVector3f(0, 0, 0))
+			{
+				*map.Find(cluster_idx) = FVector3f(center[0], center[1], center[2]);
+
+			}
 			auto pixel = { static_cast<uchar>(center[0]), static_cast<uchar>(center[1]), static_cast<uchar>(center[2]) };
 			output.at<cv::Vec3b>(y, x) = pixel;
 		}
 	}
 	
+	//动态设置下拉框,初始化子区域信息
+	InitSubInfos(map);
+
 	//此处可以查看结果
 	imwrite("./res.png", output);
 	//重新调回颜色格式
 	cv::cvtColor(output, output, cv::COLOR_RGB2RGBA);
 	//先写死，等待上述代码补全
-	SubAreaInfo info1;
-	info1.id = 0;
-	info1.subarea = FString("SubArea 1");
-	infos.Add(info1);
 
 	//将结果重新作为UTexture2D返回
 	UTexture2D* Texture = UTexture2D::CreateTransient(width, height, PF_R8G8B8A8);
@@ -189,12 +196,21 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t)
 		Texture->UpdateResource();
 	}
 	return Texture;
-   
-	
-	//SubAreaInfo info2;
-	//info1.subarea = FString("SubArea 2");
-	//infos.Add(info2);
+}
 
+void AInteractiveActor::InitSubInfos(TMap<int, FVector3f>& map)
+{
+	//设置下拉框
+	widget.Get()->GetSubAreas(map.Num());
+
+	for (auto m : map)
+	{
+		SubAreaInfo info;
+		info.id = m.Key;
+		info.color = m.Value;
+		info.subarea = FString::Printf(TEXT("SubArea %d"), m.Key);
+		infos.Add(info);
+	}
 }
 
 void AInteractiveActor::FillArea(SubAreaInfo info)
