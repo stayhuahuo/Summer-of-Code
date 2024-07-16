@@ -8,6 +8,7 @@
 DECLARE_DELEGATE_OneParam(DivideImageButtonClick, UTexture2D*);
 DECLARE_DELEGATE_OneParam(SelectSubArea, FString);
 DECLARE_DELEGATE_OneParam(FillImageButtonClick, UTexture2D*);
+DECLARE_DELEGATE_OneParam(ChangeDivideParam, int);
 DECLARE_DELEGATE_TwoParams(DistributionParams, FString, double);
 DECLARE_DELEGATE_TwoParams(TransformParams, FString, double);
 DECLARE_DELEGATE(CalculateTextureButtonClick);
@@ -26,7 +27,7 @@ public:
 	void Construct(const FArguments& InArgs);
 
 	//TSharedRef<ITableRow> OnGenerateListView(TSharedPtr<FString> InItem, const TSharedRef<STableViewBase>& OwnerTable);
-	TArray <TSharedPtr<FString>>* GetSubAreas();
+	TArray <TSharedPtr<FString>>* GetSubAreas(int num = 0);
 	FText GetCurSubArea() const;
 	void OnSelectedSubAreaChanged(TSharedPtr<FString> NewValue, ESelectInfo::Type Info);
 	void OnDivideButtonClicked();
@@ -40,10 +41,8 @@ public:
 
 
 
-	UPROPERTY()
-	FSlateBrush divide_brush;
-	UPROPERTY()
-	FSlateBrush fill_brush;
+	TSharedPtr<FSlateBrush> divide_brush;
+	TSharedPtr<FSlateBrush> fill_brush;
 
 
 
@@ -52,6 +51,7 @@ public:
 	DivideImageButtonClick divide_image_button;
 	SelectSubArea sub_area_combobox;
 	FillImageButtonClick fill_image_button;
+	ChangeDivideParam set_k_spinbox;
 	DistributionParams distribute_spinbox;
 	TransformParams transform_spinbox;
 	CalculateTextureButtonClick calculate_texture_button;
@@ -59,25 +59,5 @@ public:
 	//相关参数
 	TArray<TSharedPtr<FString>> area_array;
 	FText selected_sub_area;
-
-	double community_density_value = 1;
-	double poly_size = 1;
-	double poly_noise = 1;
-	double poly_blur = 1;
-	double random_scale_min = 0.5;
-	double random_scale_max = 1.5;
-	double random_X_rotation_min = -5;
-	double random_X_rotation_max = 5;
-	double random_Y_rotation_min = -5;
-	double random_Y_rotation_max = 5;
-	double random_Z_rotation_min = 0;
-	double random_Z_rotation_max = 360;
-
-	double random_X_displacement_min = -25;
-	double random_X_displacement_max = 25;
-	double random_Y_displacement_min = -25;
-	double random_Y_displacement_max = 25;
-	double random_Z_displacement_min = 0;
-	double random_Z_displacement_max = 0;
 
 };

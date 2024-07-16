@@ -12,15 +12,18 @@
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SScatterWidget::Construct(const FArguments& InArgs)
 {
-	FString p = FPaths::ProjectDir() + TEXT("Content/DivideImage/Colormask_0_01.png");
+	divide_brush = MakeShareable(new FSlateBrush());
+	fill_brush = MakeShareable(new FSlateBrush());
+
+	FString p = FPaths::ProjectDir() + TEXT("Content/DivideImage/testpic.jpg");
 	divide_texture = LoadTextureFromFile(p);
-	divide_brush.SetResourceObject(divide_texture);
-	divide_brush.ImageSize = FVector2D(32, 32);
+	divide_brush->SetResourceObject(divide_texture);
+	divide_brush->ImageSize = FVector2D(32, 32);
 
 	p = FPaths::ProjectDir() + TEXT("Content/FillImage/patches1_clamp_mask.png");
 	fill_texture = LoadTextureFromFile(p);
-	fill_brush.SetResourceObject(fill_texture);
-	fill_brush.ImageSize = FVector2D(32, 32);
+	fill_brush->SetResourceObject(fill_texture);
+	fill_brush->ImageSize = FVector2D(32, 32);
 
 	//分区选择下拉框
 	TSharedPtr<SComboBox<TSharedPtr<FString>>> sub_areas_combobox = 
@@ -39,13 +42,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 	ChildSlot
 	[
 		SNew(SBorder)
-			.DesiredSizeScale(FVector2D(200,800))
+			.DesiredSizeScale(FVector2D(250,650))
 			[
 				SNew(SVerticalBox)
 					+ SVerticalBox::Slot()
 					.HAlign(HAlign_Center)
-					.VAlign(VAlign_Top)
-					.AutoHeight()
+					.VAlign(VAlign_Center)
+					.FillHeight(1)
 					[
 						SNew(SVerticalBox)
 							+ SVerticalBox::Slot()
@@ -54,6 +57,14 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 							.AutoHeight()
 							[
 								SNew(SVerticalBox)
+									+ SVerticalBox::Slot()
+									.HAlign(HAlign_Center)
+									.VAlign(VAlign_Top)
+									.AutoHeight()
+									[
+										SNew(STextBlock)
+											.Text(FText::FromString("Select Divide Image"))
+									]
 									+ SVerticalBox::Slot()
 									.HAlign(HAlign_Center)
 									.VAlign(VAlign_Top)
@@ -71,7 +82,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 													.VAlign(VAlign_Top)
 													.AutoHeight()
 													[
-														SNew(SImage).Image(&divide_brush)
+														SNew(SImage).Image(divide_brush.Get())
 													]
 													+ SVerticalBox::Slot()
 													.HAlign(HAlign_Center)
@@ -79,7 +90,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 													.AutoHeight()
 													[
 														SNew(SButton)
-														.Text(FText::FromString("Select Divide Image"))
+														.Text(FText::FromString("select"))
 														.DesiredSizeScale(1)
 														.OnClicked_Lambda([this]()->FReply {
 														divide_image_button.Execute(divide_texture);
@@ -87,36 +98,59 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 														return FReply::Handled();
 															})
 													]
-
-
 											]
-
-										//SNew(SButton)
-										//	.Text(FText::FromString("Select Divide Image"))
-										//	.DesiredSizeScale(1)
-										//	.OnClicked_Lambda([this]()->FReply {
-										//	FString p = FPaths::ProjectDir() + TEXT("Content/DivideImage/Colormask_0_01.png");
-										//	t = LoadTextureFromFile(p);
-										//	set_texture.Execute(t);
-											//fill_image_button.Execute(TEXT("Fill Image Path"));
-
-											//OnDivideButtonClicked();
-											//return FReply::Handled();
-											//	})
-										//SNew(SButton)
-										//	.Text(FText::FromString("Select Divide Image"))
-										//	.DesiredSizeScale(1)
-										//	.OnClicked_Lambda([this]()->FReply {
-										//	divide_image_button.Execute(TEXT("Divide Image Path"));
-										//	return FReply::Handled();
-										//		})
 									]
 									+ SVerticalBox::Slot()
 									.HAlign(HAlign_Center)
 									.VAlign(VAlign_Top)
 									.AutoHeight()
 									[
-										sub_areas_combobox.ToSharedRef()
+										SNew(SHorizontalBox)
+											+ SHorizontalBox::Slot()
+											.HAlign(HAlign_Left)
+											.VAlign(VAlign_Top)
+											.FillWidth(1)
+											[
+												SNew(STextBlock)
+													.Text(FText::FromString("Set Zone:    "))
+											]
+											+ SHorizontalBox::Slot()
+											.HAlign(HAlign_Fill)
+											.VAlign(VAlign_Top)
+											.FillWidth(2)
+											[
+												SNew(SSpinBox<int>)
+													.MinValue(1)
+													.MaxValue(10)
+													.Value(4)
+													.MinDesiredWidth(100)
+													.OnEndSliderMovement_Lambda([this](int value) {
+													//set_k_spinbox.Execute(value);
+													//poly_size = value;
+														})
+											]
+									]
+									+ SVerticalBox::Slot()
+									.HAlign(HAlign_Center)
+									.VAlign(VAlign_Top)
+									.AutoHeight()
+									[
+										SNew(SHorizontalBox)
+											+ SHorizontalBox::Slot()
+											.HAlign(HAlign_Left)
+											.VAlign(VAlign_Top)
+											.AutoWidth()
+											[
+												SNew(STextBlock)
+													.Text(FText::FromString("Sub Area:    "))
+											]
+											+ SHorizontalBox::Slot()
+												.HAlign(HAlign_Right)
+												.VAlign(VAlign_Top)
+											.AutoWidth()
+											[
+												sub_areas_combobox.ToSharedRef()
+											]
 									]
 							]
 							+ SVerticalBox::Slot()
@@ -138,40 +172,49 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 											return FReply::Handled();
 												})
 									]
+							]
+							+ SVerticalBox::Slot()
+							.HAlign(HAlign_Center)
+							.VAlign(VAlign_Top)
+							.AutoHeight()
+							[
+								SNew(SVerticalBox)
 									+ SVerticalBox::Slot()
 									.HAlign(HAlign_Center)
 									.VAlign(VAlign_Top)
 									.AutoHeight()
 									[
-										SNew(SHorizontalBox)
-											+ SHorizontalBox::Slot()
-											.HAlign(HAlign_Left)
+										SNew(STextBlock)
+											.Text(FText::FromString("Select Fill Image"))
+									]
+									+ SVerticalBox::Slot()
+									.HAlign(HAlign_Center)
+									.VAlign(VAlign_Top)
+									.AutoHeight()
+									[
+										SNew(SVerticalBox)
+											+ SVerticalBox::Slot()
+											.HAlign(HAlign_Center)
 											.VAlign(VAlign_Top)
-											.AutoWidth()
+											.AutoHeight()
 											[
-												SNew(SVerticalBox)
-													+ SVerticalBox::Slot()
-													.HAlign(HAlign_Center)
-													.VAlign(VAlign_Top)
-													.AutoHeight()
-													[
-														SNew(SImage).Image(&fill_brush)
-													]
-													+ SVerticalBox::Slot()
-													.HAlign(HAlign_Center)
-													.VAlign(VAlign_Top)
-													.AutoHeight()
-													[
-
-														SNew(SButton)
-															.Text(FText::FromString("Select Fill Image"))
-															.DesiredSizeScale(1)
-															.OnClicked_Lambda([this]()->FReply {
-															fill_image_button.Execute(fill_texture);
-															return FReply::Handled();
-																})
-													]
+												SNew(SImage).Image(fill_brush.Get())
 											]
+											+ SVerticalBox::Slot()
+											.HAlign(HAlign_Center)
+											.VAlign(VAlign_Top)
+											.AutoHeight()
+											[
+
+												SNew(SButton)
+													.Text(FText::FromString("select"))
+													.DesiredSizeScale(1)
+													.OnClicked_Lambda([this]()->FReply {
+													fill_image_button.Execute(fill_texture);
+													return FReply::Handled();
+														})
+											]
+
 									]
 							]
 							+ SVerticalBox::Slot()
@@ -196,6 +239,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 											.MinValue(1)
 											.MaxValue(10000)
 											.Value(1)
+											.MinDesiredWidth(100)
 											.OnEndSliderMovement_Lambda([this](double value) {
 											distribute_spinbox.Execute(FString("community_density_value"), value);
 											//community_density_value = value;
@@ -217,6 +261,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 											.MinValue(1)
 											.MaxValue(10000)
 											.Value(1)
+											.MinDesiredWidth(100)
 											.OnEndSliderMovement_Lambda([this](double value) {
 											distribute_spinbox.Execute(FString("poly_size"), value);
 											//poly_size = value;
@@ -238,6 +283,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 											.MinValue(1)
 											.MaxValue(10000)
 											.Value(1)
+											.MinDesiredWidth(100)
 											.OnEndSliderMovement_Lambda([this](double value) {
 											distribute_spinbox.Execute(FString("poly_noise"), value);
 											//poly_noise = value;
@@ -259,6 +305,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 											.MinValue(1)
 											.MaxValue(10000)
 											.Value(1)
+											.MinDesiredWidth(100)
 											.OnEndSliderMovement_Lambda([this](double value) {
 											distribute_spinbox.Execute(FString("poly_blur"), value);
 											//poly_blur = value;
@@ -327,12 +374,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(0.1)
 																	.MaxValue(1)
 																	.Value(0.5)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_scale_min"), value);
 																	//random_scale_min = value;
@@ -342,12 +390,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(1)
 																	.MaxValue(2)
 																	.Value(1.5)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_scale_max"), value);
 																	//random_scale_max = value;
@@ -398,12 +447,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(-360)
 																	.MaxValue(0)
 																	.Value(-5)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_X_rotation_min"), value);
 																	//random_X_rotation_min = value;
@@ -413,12 +463,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(0)
 																	.MaxValue(360)
 																	.Value(5)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_X_rotation_max"), value);
 																	//random_X_rotation_max = value;
@@ -434,12 +485,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(-360)
 																	.MaxValue(0)
 																	.Value(-5)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_Y_rotation_min"), value);
 																	//random_Y_rotation_min = value;
@@ -449,12 +501,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(0)
 																	.MaxValue(360)
 																	.Value(5)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_Y_rotation_max"), value);
 																	//random_Y_rotation_max = value;
@@ -470,12 +523,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(-360)
 																	.MaxValue(0)
 																	.Value(0)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_Z_rotation_min"), value);
 																	//random_Z_rotation_min = value;
@@ -485,12 +539,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(0)
 																	.MaxValue(360)
 																	.Value(360)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_Z_rotation_max"), value);
 																	//random_Z_rotation_max = value;
@@ -520,14 +575,17 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
+															//.MaxWidth(200)
 															[
 																SNew(STextBlock).Text(FText::FromString("Min"))
 															]
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
+															//.MaxWidth(100)
+															//.Padding(20, 0)
 															[
 																SNew(STextBlock).Text(FText::FromString("Max"))
 															]
@@ -541,12 +599,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(-100)
 																	.MaxValue(0)
 																	.Value(-25)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_X_rotation_min"), value);
 																	//random_X_displacement_min = value;
@@ -556,12 +615,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(0)
 																	.MaxValue(100)
 																	.Value(25)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_X_rotation_max"), value);
 																	//random_X_displacement_max = value;
@@ -577,12 +637,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(-100)
 																	.MaxValue(0)
 																	.Value(-25)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_Y_rotation_min"), value);
 																	//random_Y_displacement_min = value;
@@ -592,12 +653,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(0)
 																	.MaxValue(100)
 																	.Value(25)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_Y_rotation_max"), value);
 																	//random_Y_displacement_max = value;
@@ -613,12 +675,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(-100)
 																	.MaxValue(0)
 																	.Value(0)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_Z_rotation_min"), value);
 																	//random_Z_displacement_min = value;
@@ -628,12 +691,13 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 															+ SHorizontalBox::Slot()
 															.HAlign(HAlign_Center)
 															.VAlign(VAlign_Top)
-															.AutoWidth()
+															.FillWidth(1)
 															[
 																SNew(SSpinBox<double>)
 																	.MinValue(0)
 																	.MaxValue(100)
 																	.Value(0)
+																	.MinDesiredWidth(50)
 																	.OnEndSliderMovement_Lambda([this](double value) {
 																	transform_spinbox.Execute(FString("random_Z_rotation_max"), value);
 																	//random_Z_displacement_max = value;
@@ -664,10 +728,12 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 //{
 //	//return SNew(SScatterWidget,OwnerTable),Item
 //}
-TArray<TSharedPtr<FString>>* SScatterWidget::GetSubAreas()
+TArray<TSharedPtr<FString>>* SScatterWidget::GetSubAreas(int num)
 {
-	area_array.Add(MakeShared<FString>(TEXT("SubArea 1")));
-	area_array.Add(MakeShared<FString>(TEXT("SubArea 2")));
+	for (int32 a = 1; a < num + 1; a++)
+	{
+		area_array.Add(MakeShared<FString>(FString::Printf(TEXT("SubArea %d"), a)));
+	}
 	return &area_array;
 }
 FText SScatterWidget::GetCurSubArea() const

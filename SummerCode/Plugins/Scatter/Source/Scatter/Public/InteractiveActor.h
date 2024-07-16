@@ -15,6 +15,9 @@ struct SubAreaInfo
 	//子区域名字
 	FString subarea;
 
+	//子区域颜色
+	FVector3f color;
+
 	//填充图像
 	UTexture2D* fill_image = nullptr;
 
@@ -53,11 +56,14 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UTexture2D* DivideArea(UTexture2D* t);
+	UTexture2D* DivideArea(UTexture2D* t, int k = 4);
+
+	void InitSubInfos(TMap<int, FVector3f>& map);
 
 	void FillArea(SubAreaInfo info);
 
 	void CalculateTexture(SubAreaInfo info);
+	
 
 	//通过路径获取单张图片将之转化成Texture2D
 	UFUNCTION(BlueprintCallable, Category = "Image")
