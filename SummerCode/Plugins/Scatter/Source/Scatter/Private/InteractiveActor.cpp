@@ -52,6 +52,7 @@ void AInteractiveActor::BeginPlay()
 		});
 
 	widget.Get()->fill_image_button.BindLambda([this](UTexture2D* t) {
+		fill_texture = t;
 		current_info.fill_image = t;
 		FillArea(current_info);
 		});
@@ -66,7 +67,7 @@ void AInteractiveActor::BeginPlay()
 	
 	widget.Get()->calculate_texture_button.BindLambda([this]() {
 		CalculateTexture(current_info);
-
+		color = current_info.color;
 		
 
 

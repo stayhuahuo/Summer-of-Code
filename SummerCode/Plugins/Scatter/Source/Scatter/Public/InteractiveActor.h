@@ -93,8 +93,11 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	UTexture2D* scatter_texture = nullptr;
+	UPROPERTY(BlueprintReadWrite)
+	UTexture2D* fill_texture = nullptr;
 
-
+	UPROPERTY(BlueprintReadWrite)
+	FVector3f color;
 
 	//UPROPERTY(BlueprintReadWrite)
 	//TArray<UTexture*> all_images;
