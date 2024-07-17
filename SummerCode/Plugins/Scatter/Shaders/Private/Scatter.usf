@@ -1,0 +1,26 @@
+#include "/Engine/Public/Platform.ush"
+// #include "/Engine/Private/Common.ush"
+
+
+// Texture2D<float4> KMTexture; 
+// SamplerState KMTextureSampler;
+// Texture2D<float4> InTexture; 
+// SamplerState InTextureSampler;
+RWTexture2D<float4> OutTexture; 
+float4 SelectColor;
+
+[numthread(32,32,1)]
+void MainCS()
+{
+    // float sizeX, sizeY;
+    // OutTexture.GetDimensions(sizeX, sizeY);
+    //
+    // float2 iResolution = float2(sizeX, sizeY);
+    // float2 uv = (ThreadId.xy / iResolution.xy) - 0.5;
+
+    // float4 AreaColor = InTexture.Sample(InTextureSampler, uv);
+    // float4 IDColor = KMTexture.Sample(KMTextureSampler, uv);
+    // float3 SelectColor = SimpleUniformStruct.SelectColor;
+    // float IdMask = IDColor.xyz == SelectColor.xyz? 1.0: 0.0;
+    //OutTexture[ThreadId.xy] = float4(0, 0, 0, 1);//SelectColor;// * IdMask;
+}

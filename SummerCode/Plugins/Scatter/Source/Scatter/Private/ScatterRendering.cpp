@@ -1,6 +1,6 @@
 ﻿#include "Scatter/Public/ScatterRendering.h"
 #include "Engine/TextureRenderTarget2D.h"
-
+// #include "../../Scatter/Shaders/Scatter.usf"
 #include "PipelineStateCache.h"
 
 #include "GlobalShader.h"
@@ -11,108 +11,106 @@
 #include "ShaderParameterUtils.h"
 #include "PixelShaderUtils.h"
 
-namespace ScatterRendering
+// /*
+//  * Vertex Resource
+//  */
+// TGlobalResource<FTextureVertexDeclaration> GTextureVertexDeclaration;
+// TGlobalResource<FRectangleVertexBuffer> GRectangleVertexBuffer;
+// TGlobalResource<FRectangleIndexBuffer> GRectangleIndexBuffer;
+
+
+// IMPLEMENT_GLOBAL_SHADER_PARAMETER_STRUCT(FSimpleUniformStructParameters, "SimpleUniformStruct");
+IMPLEMENT_GLOBAL_SHADER(FSimpleRDGComputeShader, "/ScatterShaders/Private/Scatter.usf", "MainCS", SF_Compute);
+// IMPLEMENT_GLOBAL_SHADER(FSimpleRDGComputeShader, "../../Scatter/Shaders/Scatter.usf", "MainCS", SF_Compute);
+/*
+* Render Function
+*/
+void RDGCompute(FRHICommandListImmediate& RHIImmCmdList, FTexture2DRHIRef RenderTargetRHI, FLinearColor SelectColor)
 {
-	// /*
-	//  * Vertex Resource
-	//  */
-	// TGlobalResource<FTextureVertexDeclaration> GTextureVertexDeclaration;
-	// TGlobalResource<FRectangleVertexBuffer> GRectangleVertexBuffer;
-	// TGlobalResource<FRectangleIndexBuffer> GRectangleIndexBuffer;
+	check(IsInRenderingThread());
 
-	class FSimpleRDGComputeShader : public FGlobalShader
-	{
-	public:
-		DECLARE_GLOBAL_SHADER(FSimpleRDGComputeShader);
-		SHADER_USE_PARAMETER_STRUCT(FSimpleRDGComputeShader, FGlobalShader);
+	//Create RenderTargetDesc
+	const FRDGTextureDesc& RenderTargetDesc = FRDGTextureDesc::Create2D(RenderTargetRHI->GetSizeXY(), RenderTargetRHI->GetFormat(), FClearValueBinding::Black, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV);
 
-		BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-			SHADER_PARAMETER_STRUCT_REF(FSimpleUniformStructParameters, SimpleUniformStruct)
-			SHADER_PARAMETER_TEXTURE(Texture2D<float4>, KMTexture)
-			SHADER_PARAMETER_TEXTURE(Texture2D<float4>, InTexture)
-			SHADER_PARAMETER_SAMPLER(SamplerState, KMTextureSampler)
-			SHADER_PARAMETER_SAMPLER(SamplerState, InTextureSampler)
-			SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, OutTexture)
-			END_SHADER_PARAMETER_STRUCT()
+	TRefCountPtr<IPooledRenderTarget> PooledRenderTarget;
 
-		static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
-		{
-			return true; // 
-		}
-	};
+	//RDG Begin
+	FRDGBuilder GraphBuilder(RHIImmCmdList);
+	FRDGTextureRef RDGRenderTarget = GraphBuilder.CreateTexture(RenderTargetDesc, TEXT("RDGRenderTarget"));
 
-	IMPLEMENT_GLOBAL_SHADER_PARAMETER_STRUCT(FSimpleUniformStructParameters, "SimpleUniformStruct");
-	IMPLEMENT_GLOBAL_SHADER(FSimpleRDGComputeShader, "/Scatter/Private/Scatter.usf", "MainCS", SF_Compute);
-	/*
- * Render Function
- */
-	void RDGCompute(FRHICommandListImmediate& RHIImmCmdList, FTexture2DRHIRef KMTexture, FTexture2DRHIRef InAreaTexture, FTexture2DRHIRef RenderTargetRHI, FSimpleShaderParameter InParameter)
-	{
-		check(IsInRenderingThread());
+	//Setup uniform Parameters
+	// FSimpleUniformStructParameters StructParameters;
+	// StructParameters.SelectColor = InParameter.SelectColor;
 
-		//Create RenderTargetDesc
-		const FRDGTextureDesc& RenderTargetDesc = FRDGTextureDesc::Create2D(RenderTargetRHI->GetSizeXY(), RenderTargetRHI->GetFormat(), FClearValueBinding::Black, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV);
+	FSimpleRDGComputeShader::FParameters* Parameters = GraphBuilder.AllocParameters<FSimpleRDGComputeShader::FParameters>();
+	FRDGTextureUAVDesc UAVDesc(RDGRenderTarget);
+	
+	// Parameters->KMTexture = KMTexture;
+	// Parameters->InTexture = InAreaTexture;
+	// Parameters->SelectColor = InParameter.SelectColor;
+	Parameters->SelectColor = SelectColor;
+	// Parameters->SimpleUniformStruct = TUniformBufferRef<FSimpleUniformStructParameters>::CreateUniformBufferImmediate(StructParameters, UniformBuffer_SingleFrame);
+	Parameters->OutTexture = GraphBuilder.CreateUAV(UAVDesc);
 
-		TRefCountPtr<IPooledRenderTarget> PooledRenderTarget;
+	//Get ComputeShader From GlobalShaderMap
+	const ERHIFeatureLevel::Type FeatureLevel = ERHIFeatureLevel::SM6;
+	FGlobalShaderMap* GlobalShaderMap = GetGlobalShaderMap(FeatureLevel);
+	TShaderMapRef<FSimpleRDGComputeShader> ComputeShader(GlobalShaderMap);
 
-		//RDG Begin
-		FRDGBuilder GraphBuilder(RHIImmCmdList);
-		FRDGTextureRef RDGRenderTarget = GraphBuilder.CreateTexture(RenderTargetDesc, TEXT("RDGRenderTarget"));
+	//Compute Thread Group Count
+	FIntVector ThreadGroupCount(
+		32,
+		32,
+		1);
 
-		//Setup uniform Parameters
-		FSimpleUniformStructParameters StructParameters;
-		StructParameters.SelectColor = InParameter.SelectColor;
+	//ValidateShaderParameters(PixelShader, Parameters);
+	//ClearUnusedGraphResources(PixelShader, Parameters);
 
-		FSimpleRDGComputeShader::FParameters* Parameters = GraphBuilder.AllocParameters<FSimpleRDGComputeShader::FParameters>();
-		FRDGTextureUAVDesc UAVDesc(RDGRenderTarget);
-		Parameters->SimpleUniformStruct = TUniformBufferRef<FSimpleUniformStructParameters>::CreateUniformBufferImmediate(StructParameters, UniformBuffer_SingleFrame);
-		Parameters->KMTexture = KMTexture;
-		Parameters->InTexture = InAreaTexture;
-		Parameters->OutTexture = GraphBuilder.CreateUAV(UAVDesc);
+	GraphBuilder.AddPass(
+		RDG_EVENT_NAME("RDGCompute"),
+		Parameters,
+		ERDGPassFlags::Compute,
+		[Parameters, ComputeShader, ThreadGroupCount](FRHICommandList& RHICmdList) {
+			FComputeShaderUtils::Dispatch(RHICmdList, ComputeShader, *Parameters, ThreadGroupCount);
+		});
 
-		//Get ComputeShader From GlobalShaderMap
-		const ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel; //ERHIFeatureLevel::SM5
-		FGlobalShaderMap* GlobalShaderMap = GetGlobalShaderMap(FeatureLevel);
-		TShaderMapRef<FSimpleRDGComputeShader> ComputeShader(GlobalShaderMap);
+	GraphBuilder.QueueTextureExtraction(RDGRenderTarget, &PooledRenderTarget);
+	GraphBuilder.Execute();
 
-		//Compute Thread Group Count
-		FIntVector ThreadGroupCount(
-			RenderTargetRHI->GetSizeX() / 32,
-			RenderTargetRHI->GetSizeY() / 32,
-			1);
-
-		//ValidateShaderParameters(PixelShader, Parameters);
-		//ClearUnusedGraphResources(PixelShader, Parameters);
-
-		GraphBuilder.AddPass(
-			RDG_EVENT_NAME("RDGCompute"),
-			Parameters,
-			ERDGPassFlags::Compute,
-			[Parameters, ComputeShader, ThreadGroupCount](FRHICommandList& RHICmdList) {
-				FComputeShaderUtils::Dispatch(RHICmdList, ComputeShader, *Parameters, ThreadGroupCount);
-			});
-
-		GraphBuilder.QueueTextureExtraction(RDGRenderTarget, &PooledRenderTarget);
-		GraphBuilder.Execute();
-
-		//Copy Result To RenderTarget Asset
-		RHIImmCmdList.CopyTexture(PooledRenderTarget->GetRHI()->GetTexture2D(), RenderTargetRHI->GetTexture2D(), FRHICopyTextureInfo());
-		//RHIImmCmdList.CopyToResolveTarget(PooledRenderTarget->GetRenderTargetItem().ShaderResourceTexture, RenderTargetRHI->GetTexture2D(), FResolveParams());
-	}
-
+	//Copy Result To RenderTarget Asset
+	RHIImmCmdList.CopyTexture(PooledRenderTarget->GetRHI()->GetTexture2D(), RenderTargetRHI->GetTexture2D(), FRHICopyTextureInfo());
+	//RHIImmCmdList.CopyToResolveTarget(PooledRenderTarget->GetRenderTargetItem().ShaderResourceTexture, RenderTargetRHI->GetTexture2D(), FResolveParams());
 }
-
+	
 void USimpleRenderingExampleBlueprintLibrary::UseRDGCompute(const UObject* WorldContextObject,UTexture2D* KMTexture, UTexture2D* InAreaTexture, UTextureRenderTarget2D* OutputRenderTarget, FSimpleShaderParameter Parameter)
 {
 	check(IsInGameThread());
 
 	FTexture2DRHIRef RenderTargetRHI = OutputRenderTarget->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
-	FTexture2DRHIRef KMTextureRHI = KMTexture->GetResource()->TextureRHI->GetTexture2D();
-	FTexture2DRHIRef InTextureRHI = InAreaTexture->GetResource()->TextureRHI->GetTexture2D();
+	FLinearColor Color = Parameter.SelectColor;
+	// FTexture2DRHIRef KMTextureRHI = nullptr;
+	// if(KMTexture && KMTexture->GetResource())
+		// KMTextureRHI = KMTexture->GetResource()->TextureRHI->GetTexture2D();
+	// else
+	// {
+	// 	// Create a 1x1 white texture
+	// 	FRHIResourceCreateInfo CreateInfo();
+	// 	KMTextureRHI = RHICreateTexture2D(1, 1, PF_R8G8B8A8, 1024, 1024, TexCreate_ShaderResource, CreateInfo);
+	// 	uint32 Stride;
+	// 	void* LockedData = RHILockTexture2D(KMTextureRHI.GetReference(), 0, RLM_WriteOnly, Stride, false);
+	// 	if(LockedData)
+	// 	{
+	// 		// Set the pixel to white
+	// 		FColor* PixelData = static_cast<FColor*>(LockedData);
+	// 		*PixelData = FColor::White;
+	// 		RHIUnlockTexture2D(KMTextureRHI.GetReference(), 0, false);
+	// 	}
+	// }
+	// FTexture2DRHIRef InTextureRHI = InAreaTexture->GetResource()->TextureRHI->GetTexture2D();
 	ENQUEUE_RENDER_COMMAND(CaptureCommand)
 		(
-			[RenderTargetRHI, KMTextureRHI, InTextureRHI, Parameter](FRHICommandListImmediate& RHICmdList) {
-				ScatterRendering::RDGCompute(RHICmdList, KMTextureRHI , InTextureRHI, RenderTargetRHI, Parameter);
+			[RenderTargetRHI, Color](FRHICommandListImmediate& RHICmdList) {
+				RDGCompute(RHICmdList, RenderTargetRHI, Color);
 			});
 }
 
