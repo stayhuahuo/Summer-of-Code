@@ -60,6 +60,8 @@ public:
 
 	void InitSubInfos(TMap<int, FVector3f>& map);
 
+	void ReSetSubAreas();
+
 	void FillArea(SubAreaInfo info);
 
 	void CalculateTexture(SubAreaInfo info);
@@ -89,6 +91,7 @@ public:
 	
 	TSharedPtr<SWindow> win;
 
+	UTexture2D* origin_divide_image = nullptr;
 	UTexture2D* divide_image = nullptr;
 
 	UPROPERTY(BlueprintReadWrite)

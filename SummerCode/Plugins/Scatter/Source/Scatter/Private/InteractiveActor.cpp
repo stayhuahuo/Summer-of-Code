@@ -40,7 +40,13 @@ void AInteractiveActor::BeginPlay()
 
 
 	widget.Get()->divide_image_button.BindLambda([this](UTexture2D* t) {
+		//if (divide_image == nullptr)
+		origin_divide_image = t;
 		divide_image = DivideArea(t);
+		});
+
+	widget.Get()->set_k_spinbox.BindLambda([this](int k) {
+		divide_image = DivideArea(nullptr, k);
 		});
 
 	widget.Get()->sub_area_combobox.BindLambda([this](FString subarea) {
@@ -92,6 +98,11 @@ void AInteractiveActor::Tick(float DeltaTime)
 
 UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t, int k)
 {
+	if (t == nullptr)
+	{
+		t = origin_divide_image;
+		ReSetSubAreas();
+	}
 	//此处调opencv对传入t进行颜色聚类，完成后返回两个数组，分别为label类别信息（int）、像素本身RGB
 	//SubAreaInfo数由label中数据的种类决定
 
@@ -113,7 +124,7 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t, int k)
 	
 	raw_ImData->Unlock();
 	
-	int clusterCount = 4;  //需要被分类的个数，为4
+	int clusterCount = k;  //需要被分类的个数，默认为4
 
 
 
@@ -181,7 +192,7 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t, int k)
 	InitSubInfos(map);
 
 	//此处可以查看结果
-	imwrite("./res.png", output);
+	//imwrite("C:/Users/User/Desktop/LyraResearch-main/res.png", output);
 	//重新调回颜色格式
 	cv::cvtColor(output, output, cv::COLOR_RGB2BGRA);
 
@@ -211,6 +222,12 @@ void AInteractiveActor::InitSubInfos(TMap<int, FVector3f>& map)
 		info.subarea = FString::Printf(TEXT("SubArea %d"), m.Key);
 		infos.Add(info);
 	}
+}
+
+void AInteractiveActor::ReSetSubAreas()
+{
+	infos.Empty();
+	widget.Get()->ReSetSubAreas();
 }
 
 void AInteractiveActor::FillArea(SubAreaInfo info)

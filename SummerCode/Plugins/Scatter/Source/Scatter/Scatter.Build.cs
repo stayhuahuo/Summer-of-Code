@@ -33,6 +33,10 @@ public class Scatter : ModuleRules
 				"Engine",
 				"RHI",	
 				"RenderCore",
+
+				"MaterialShaderQualitySettings",
+				
+
 				
 
 				// ... add other public dependencies that you statically link with here ...
@@ -43,12 +47,12 @@ public class Scatter : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"CoreUObject",
+				"Projects",
 				"Engine",
-				"Slate",
-				"SlateCore",
 				"InputCore",
 				"ImageWrapper",
+				"Slate",
+				"SlateCore",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

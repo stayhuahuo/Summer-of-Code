@@ -32,11 +32,10 @@ public:
 	void OnSelectedSubAreaChanged(TSharedPtr<FString> NewValue, ESelectInfo::Type Info);
 	void OnDivideButtonClicked();
 	UTexture2D* LoadTextureFromFile(FString& path);
+	void ReSetSubAreas();
 
 
-	UPROPERTY()
-	UTexture2D* divide_texture;
-	UPROPERTY()
+	TSharedPtr<UTexture2D*> divide_texture;
 	UTexture2D* fill_texture;
 
 
@@ -44,7 +43,7 @@ public:
 	TSharedPtr<FSlateBrush> divide_brush;
 	TSharedPtr<FSlateBrush> fill_brush;
 
-
+	TSharedPtr<SComboBox<TSharedPtr<FString>>> sub_areas_combobox;
 
 
 	//给InteractiveActor调用的委托

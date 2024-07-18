@@ -16,8 +16,8 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 	fill_brush = MakeShareable(new FSlateBrush());
 
 	FString p = FPaths::ProjectDir() + TEXT("Content/DivideImage/testpic.jpg");
-	divide_texture = LoadTextureFromFile(p);
-	divide_brush->SetResourceObject(divide_texture);
+	divide_texture = MakeShareable(new(UTexture2D*)(LoadTextureFromFile(p)));
+	divide_brush->SetResourceObject(*divide_texture);
 	divide_brush->ImageSize = FVector2D(32, 32);
 
 	p = FPaths::ProjectDir() + TEXT("Content/FillImage/patches1_clamp_mask.png");
@@ -26,7 +26,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 	fill_brush->ImageSize = FVector2D(32, 32);
 
 	//分区选择下拉框
-	TSharedPtr<SComboBox<TSharedPtr<FString>>> sub_areas_combobox = 
+	sub_areas_combobox = 
 		SNew(SComboBox<TSharedPtr<FString>>)
 		.OptionsSource(SScatterWidget::GetSubAreas())
 		.OnSelectionChanged(this, &SScatterWidget::OnSelectedSubAreaChanged)
@@ -93,7 +93,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 														.Text(FText::FromString("select"))
 														.DesiredSizeScale(1)
 														.OnClicked_Lambda([this]()->FReply {
-														divide_image_button.Execute(divide_texture);
+														divide_image_button.Execute(*divide_texture);
 														//OnDivideButtonClicked();
 														return FReply::Handled();
 															})
@@ -125,7 +125,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 													.Value(4)
 													.MinDesiredWidth(100)
 													.OnEndSliderMovement_Lambda([this](int value) {
-													//set_k_spinbox.Execute(value);
+													set_k_spinbox.Execute(value);
 													//poly_size = value;
 														})
 											]
@@ -742,8 +742,11 @@ FText SScatterWidget::GetCurSubArea() const
 }
 void SScatterWidget::OnSelectedSubAreaChanged(TSharedPtr<FString> NewValue, ESelectInfo::Type Info)
 {
-	this->selected_sub_area = FText::FromString(*NewValue);
-	sub_area_combobox.Execute(*NewValue);
+	if (NewValue != nullptr)
+	{
+		this->selected_sub_area = FText::FromString(*NewValue);
+		sub_area_combobox.Execute(*NewValue);
+	}
 }
 
 void SScatterWidget::OnDivideButtonClicked()
@@ -822,6 +825,24 @@ UTexture2D* SScatterWidget::LoadTextureFromFile(FString& path)
 		}
 	}
 	return Texture;
+}
+
+void SScatterWidget::ReSetSubAreas()
+{
+	//sub_areas_combobox.Reset();
+	//sub_areas_combobox =
+	//	SNew(SComboBox<TSharedPtr<FString>>)
+	//	.OptionsSource(SScatterWidget::GetSubAreas())
+	//	.OnSelectionChanged(this, &SScatterWidget::OnSelectedSubAreaChanged)
+	//	.OnGenerateWidget_Lambda([](TSharedPtr<FString> Value)->TSharedRef<SWidget>
+	//		{
+	//			return SNew(STextBlock).Text(FText::FromString(*Value));
+	//		})
+	//	[
+	//		SNew(STextBlock).Text(this, &SScatterWidget::GetCurSubArea)
+	//	];
+
+	area_array.Empty();
 }
 
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
