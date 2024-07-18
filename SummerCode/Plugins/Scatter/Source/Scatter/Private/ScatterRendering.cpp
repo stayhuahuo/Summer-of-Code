@@ -5,11 +5,11 @@
 
 #include "GlobalShader.h"
 
-#include "RenderGraphUtils.h"
-#include "RenderTargetPool.h"
-#include "RHIStaticStates.h"
-#include "ShaderParameterUtils.h"
-#include "PixelShaderUtils.h"
+// #include "RenderGraphUtils.h"
+// #include "RenderTargetPool.h"
+// #include "RHIStaticStates.h"
+// #include "ShaderParameterUtils.h"
+// #include "PixelShaderUtils.h"
 
 // /*
 //  * Vertex Resource
@@ -25,7 +25,7 @@ IMPLEMENT_GLOBAL_SHADER(FSimpleRDGComputeShader, "/ScatterShaders/Private/Scatte
 /*
 * Render Function
 */
-void RDGCompute(FRHICommandListImmediate& RHIImmCmdList, FTexture2DRHIRef RenderTargetRHI, FLinearColor SelectColor)
+void RDGCompute(FRHICommandListImmediate& RHIImmCmdList, FTexture2DRHIRef KMTexture, FTexture2DRHIRef InAreaTexture, FTexture2DRHIRef RenderTargetRHI, FLinearColor SelectColor)
 {
 	check(IsInRenderingThread());
 
@@ -45,8 +45,8 @@ void RDGCompute(FRHICommandListImmediate& RHIImmCmdList, FTexture2DRHIRef Render
 	FSimpleRDGComputeShader::FParameters* Parameters = GraphBuilder.AllocParameters<FSimpleRDGComputeShader::FParameters>();
 	FRDGTextureUAVDesc UAVDesc(RDGRenderTarget);
 	
-	// Parameters->KMTexture = KMTexture;
-	// Parameters->InTexture = InAreaTexture;
+	Parameters->KMTexture = KMTexture;
+	Parameters->InTexture = InAreaTexture;
 	// Parameters->SelectColor = InParameter.SelectColor;
 	Parameters->SelectColor = SelectColor;
 	// Parameters->SimpleUniformStruct = TUniformBufferRef<FSimpleUniformStructParameters>::CreateUniformBufferImmediate(StructParameters, UniformBuffer_SingleFrame);
@@ -59,8 +59,8 @@ void RDGCompute(FRHICommandListImmediate& RHIImmCmdList, FTexture2DRHIRef Render
 
 	//Compute Thread Group Count
 	FIntVector ThreadGroupCount(
-		32,
-		32,
+		RenderTargetRHI->GetSizeX() / 32,
+		RenderTargetRHI->GetSizeX() / 32,
 		1);
 
 	//ValidateShaderParameters(PixelShader, Parameters);
@@ -82,35 +82,17 @@ void RDGCompute(FRHICommandListImmediate& RHIImmCmdList, FTexture2DRHIRef Render
 	//RHIImmCmdList.CopyToResolveTarget(PooledRenderTarget->GetRenderTargetItem().ShaderResourceTexture, RenderTargetRHI->GetTexture2D(), FResolveParams());
 }
 	
-void USimpleRenderingExampleBlueprintLibrary::UseRDGCompute(const UObject* WorldContextObject,UTexture2D* KMTexture, UTexture2D* InAreaTexture, UTextureRenderTarget2D* OutputRenderTarget, FSimpleShaderParameter Parameter)
+void USimpleRenderingExampleBlueprintLibrary::UseRDGCompute(const UObject* WorldContextObject,UTexture2D* KMTexture, UTexture2D* InAreaTexture, UTextureRenderTarget2D* OutputRenderTarget, FLinearColor Color)
 {
 	check(IsInGameThread());
 
 	FTexture2DRHIRef RenderTargetRHI = OutputRenderTarget->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
-	FLinearColor Color = Parameter.SelectColor;
-	// FTexture2DRHIRef KMTextureRHI = nullptr;
-	// if(KMTexture && KMTexture->GetResource())
-		// KMTextureRHI = KMTexture->GetResource()->TextureRHI->GetTexture2D();
-	// else
-	// {
-	// 	// Create a 1x1 white texture
-	// 	FRHIResourceCreateInfo CreateInfo();
-	// 	KMTextureRHI = RHICreateTexture2D(1, 1, PF_R8G8B8A8, 1024, 1024, TexCreate_ShaderResource, CreateInfo);
-	// 	uint32 Stride;
-	// 	void* LockedData = RHILockTexture2D(KMTextureRHI.GetReference(), 0, RLM_WriteOnly, Stride, false);
-	// 	if(LockedData)
-	// 	{
-	// 		// Set the pixel to white
-	// 		FColor* PixelData = static_cast<FColor*>(LockedData);
-	// 		*PixelData = FColor::White;
-	// 		RHIUnlockTexture2D(KMTextureRHI.GetReference(), 0, false);
-	// 	}
-	// }
-	// FTexture2DRHIRef InTextureRHI = InAreaTexture->GetResource()->TextureRHI->GetTexture2D();
+	FTexture2DRHIRef KMTextureRHI = KMTexture->GetResource()->TextureRHI->GetTexture2D();
+	FTexture2DRHIRef InTextureRHI = InAreaTexture->GetResource()->TextureRHI->GetTexture2D();
 	ENQUEUE_RENDER_COMMAND(CaptureCommand)
 		(
-			[RenderTargetRHI, Color](FRHICommandListImmediate& RHICmdList) {
-				RDGCompute(RHICmdList, RenderTargetRHI, Color);
+			[KMTextureRHI, InTextureRHI, RenderTargetRHI, Color](FRHICommandListImmediate& RHICmdList) {
+				RDGCompute(RHICmdList, KMTextureRHI, InTextureRHI,RenderTargetRHI, Color);
 			});
 }
 

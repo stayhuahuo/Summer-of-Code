@@ -33,8 +33,7 @@ public class Scatter : ModuleRules
 				"Engine",
 				"RHI",	
 				"RenderCore",
-				"Slate",
-				"SlateCore",
+
 				"MaterialShaderQualitySettings",
 				
 
@@ -52,6 +51,8 @@ public class Scatter : ModuleRules
 				"Engine",
 				"InputCore",
 				"ImageWrapper",
+				"Slate",
+				"SlateCore",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

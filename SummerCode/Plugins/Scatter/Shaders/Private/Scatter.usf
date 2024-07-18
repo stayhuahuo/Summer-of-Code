@@ -2,25 +2,49 @@
 // #include "/Engine/Private/Common.ush"
 
 
-// Texture2D<float4> KMTexture; 
-// SamplerState KMTextureSampler;
-// Texture2D<float4> InTexture; 
-// SamplerState InTextureSampler;
+Texture2D<float4> KMTexture; 
+SamplerState KMTextureSampler;
+Texture2D<float4> InTexture; 
+SamplerState InTextureSampler;
 RWTexture2D<float4> OutTexture; 
 float4 SelectColor;
 
-[numthread(32,32,1)]
-void MainCS()
-{
-    // float sizeX, sizeY;
-    // OutTexture.GetDimensions(sizeX, sizeY);
-    //
-    // float2 iResolution = float2(sizeX, sizeY);
-    // float2 uv = (ThreadId.xy / iResolution.xy) - 0.5;
 
-    // float4 AreaColor = InTexture.Sample(InTextureSampler, uv);
-    // float4 IDColor = KMTexture.Sample(KMTextureSampler, uv);
+
+// Function to compare two float3 vectors with an epsilon
+bool IsClose(float3 a, float3 b, float epsilon)
+{
+	return all(abs(a - b) < epsilon);
+}
+
+float Remap(float x, float t1, float t2, float s1, float s2)
+{
+	return (s2 - s1) / (t2 - t1) * (x - t1) + s1;
+}
+// 定义sRGB转线性空间的函数  
+float3 sRGBtoLinear(float3 color)  
+{  
+	return pow(color, 2.2); // 应用sRGB Gamma曲线进行sRGB到线性空间的转换  
+}  
+
+// 定义线性空间转sRGB的函数  
+float3 LinearTosRGB(float3 color)  
+{  
+	return pow(color, 1.0 / 2.2); // 应用sRGB Gamma曲线将线性空间转换为sRGB  
+}  
+[numthreads(32,32,1)]
+void MainCS(uint3 ThreadId : SV_DispatchThreadID)
+{
+    float4 AreaColor = InTexture[ThreadId.xy];
+    float4 IDColor = KMTexture[ThreadId.xy];
     // float3 SelectColor = SimpleUniformStruct.SelectColor;
-    // float IdMask = IDColor.xyz == SelectColor.xyz? 1.0: 0.0;
-    //OutTexture[ThreadId.xy] = float4(0, 0, 0, 1);//SelectColor;// * IdMask;
+	float epsilon = 0.05;
+	float4 rSelectColor = float4(Remap(SelectColor.x, 0, 255, 0, 1), Remap(SelectColor.y, 0, 255, 0, 1), Remap(SelectColor.z, 0, 255, 0, 1), 1);
+	rSelectColor.xyz = sRGBtoLinear(rSelectColor.xyz);
+	float IdMask = IsClose(IDColor.xyz, rSelectColor.zyx, epsilon) ? 1.0: 0.0;
+	AreaColor = float4(Remap(AreaColor.x, 0, 1, 0.5, 1.5), Remap(AreaColor.y, 0, 1, 0.5, 1.5), Remap(AreaColor.z, 0, 1, 0.5, 1.5), 1);
+	float luminance = dot(IDColor, float3(0.2126, 0.7152, 0.0722));  
+	luminance = lerp(luminance * 0.7, luminance, 0.5);
+	float3 finalColor = IdMask?AreaColor.xyz * IDColor.xyz:IDColor.xyz * luminance ;
+	OutTexture[ThreadId.xy] = float4(finalColor,IdMask);//float4(IDColor.xyz ,1);
 }
