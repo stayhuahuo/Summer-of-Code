@@ -26,7 +26,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 	fill_brush->SetResourceObject(fill_texture);
 	fill_brush->ImageSize = FVector2D(32, 32);
 
-	p = FPaths::ProjectDir() + TEXT("Content/FillImage/patches1_clamp_mask.png");
+	p = FPaths::ProjectDir() + TEXT("Content/FillImage/bands1_clamp_mask.png");
 	fill_texture_1 = LoadTextureFromFile(p);
 	fill_brush_1->SetResourceObject(fill_texture_1);
 	fill_brush_1->ImageSize = FVector2D(32, 32);
