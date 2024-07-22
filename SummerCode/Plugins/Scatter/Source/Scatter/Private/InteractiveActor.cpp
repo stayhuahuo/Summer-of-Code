@@ -5,6 +5,8 @@
 #include "Widgets/SWeakWidget.h"
 #include "IImageWrapper.h"
 #include "IImageWrapperModule.h"
+#include "Kismet/KismetRenderingLibrary.h"
+#include "ScatterRendering.h"
 
 #if WITH_OPENCV
 #include "PreOpenCVHeaders.h"
@@ -50,36 +52,57 @@ void AInteractiveActor::BeginPlay()
 		});
 
 	widget.Get()->sub_area_combobox.BindLambda([this](FString subarea) {
-		for (auto i : infos)
+		for (auto& i : infos)
 		{
 			if (i.subarea == subarea)
-				current_info = i;
+			{
+				current_info = &i;
+				break;
+			}
 		}
 		});
 
 	widget.Get()->fill_image_button.BindLambda([this](UTexture2D* t) {
 		fill_texture = t;
-		current_info.fill_image = t;
-		FillArea(current_info);
+		current_info->fill_image = t;
+		//FillArea(*current_info);
 		});
 
 	widget.Get()->distribute_spinbox.BindLambda([this](FString category, double value) {
-		*current_info.textrue_para.Find(category) = value;
+		*current_info->textrue_para.Find(category) = value;
 		});
 
 	widget.Get()->transform_spinbox.BindLambda([this](FString category, double value) {
-		*current_info.mesh_para.Find(category) = value;
+		*current_info->mesh_para.Find(category) = value;
 		});
 	
 	widget.Get()->calculate_texture_button.BindLambda([this]() {
-		CalculateTexture(current_info);
-		color = current_info.color;
+		CalculateTexture();
+		color = current_info->color;
 		
 
 
 		//FString MaterialPath = TEXT("Material'/Game/DivideImage/0001.0001'");
 		//material = LoadObject<UMaterialInterface>(nullptr, *MaterialPath);
 		});
+	//UTexture2D* test = UTexture2D::CreateTransient(2048, 2048, PF_R8G8B8A8);
+	//test->MipGenSettings = TMGS_NoMipmaps;
+	//test->CompressionSettings = TC_EditorIcon;
+	//test->SRGB = true;
+	//test->AddToRoot();
+	//FTexture2DMipMap& Mip = test->PlatformData->Mips[0];
+	//void* Data = Mip.BulkData.Lock(LOCK_READ_WRITE);
+	//FColor* FormData = static_cast<FColor*>(Data);
+	//for (int32 Y = 0; Y < 2048; Y++)
+	//{
+	//	for (int32 X = 0; X < 2048; X++)
+	//	{
+	//		FormData[Y * 2048 + X] = FColor::White;
+	//	}
+	//}
+	//Mip.BulkData.Unlock();
+	//test->UpdateResource();
+	//te = MakeShareable(test);
 }
 
 void AInteractiveActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -192,7 +215,7 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t, int k)
 	InitSubInfos(map);
 
 	//此处可以查看结果
-	//imwrite("C:/Users/User/Desktop/LyraResearch-main/res.png", output);
+	imwrite("C:/Users/User/Desktop/LyraResearch-main/res.png", output);
 	//重新调回颜色格式
 	cv::cvtColor(output, output, cv::COLOR_RGB2BGRA);
 
@@ -216,10 +239,10 @@ void AInteractiveActor::InitSubInfos(TMap<int, FVector3f>& map)
 
 	for (auto m : map)
 	{
-		SubAreaInfo info;
+		FSubAreaInfo info;
 		info.id = m.Key;
 		info.color = m.Value;
-		info.subarea = FString::Printf(TEXT("SubArea %d"), m.Key);
+		info.subarea = FString::Printf(TEXT("SubArea %d"), m.Key + 1);
 		infos.Add(info);
 	}
 }
@@ -230,16 +253,76 @@ void AInteractiveActor::ReSetSubAreas()
 	widget.Get()->ReSetSubAreas();
 }
 
-void AInteractiveActor::FillArea(SubAreaInfo info)
-{
-	//用currentinfo.fillimage和divide_image求交，得到采样点图info.samples_texture
+//void AInteractiveActor::FillArea(FSubAreaInfo info)
+//{
+//	//用currentinfo.fillimage和divide_image求交，得到采样点图info.samples_texture
+//	//UTexture2D* t=UKismetRenderingLibrary::RenderTargetCreateStaticTexture2DEditorOnly(GetWorld(),Rendert,)
+//}
 
-}
-
-void AInteractiveActor::CalculateTexture(SubAreaInfo info)
+void AInteractiveActor::CalculateTexture()
 {
 	//通过info中各种参数及info.samples_texture计算最终纹理scatter_texture
 	scatter_texture = divide_image;
+	current_info;
+	//return;
+	//UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>();
+	//RenderTarget->InitAutoFormat(1024, 1024);
+	//RenderTarget->UpdateResourceImmediate(true); 
+
+	//FString p = FPaths::ProjectDir() + TEXT("Content/DivideImage/Colormask_0_03.png");
+	//te = LoadTexture2D(p);
+
+	for (auto& i : infos)
+	{
+		if (i.fill_image == nullptr)
+			continue;
+		//UTexture2D* in_kmeans_texture2D = NewObject<UTexture2D>(scatter_texture);
+		//FString TextureName = "Test";
+		//FString PackName = FString::Printf(TEXT("/Game/%s"), *TextureName);
+		//UPackage* Package = CreatePackage(*PackName);
+		//Package->FullyLoad();
+		//UTexture2D* Texture = NewObject<UTexture2D>(Package, *TextureName, RF_Public | RF_Standalone | RF_MarkAsRootSet);
+
+		//static const int32 TextureWidth = 2048;
+		//static const int32 TextureHeight = 2048;
+		//TArray<FColor> SourceColors;
+		//SourceColors.Init(FColor::White, TextureWidth * TextureHeight);
+
+		////Source 
+		//Texture->MipGenSettings = TextureMipGenSettings::TMGS_NoMipmaps;
+		//Texture->Source.Init(TextureWidth, TextureHeight, 1, 1, ETextureSourceFormat::TSF_BGRA8);
+		////Texture->Source.Init(TextureWidth, TextureHeight, 1, 1, ETextureSourceFormat::TSF_BGRA8);
+		//uint8* SourceData = Texture->Source.LockMip(0);
+		//FMemory::Memcpy(SourceData, SourceColors.GetData(), sizeof(FColor) * SourceColors.Num());
+		//Texture->Source.UnlockMip(0);
+
+		////PlatformData
+		//Texture->PlatformData = new FTexturePlatformData();
+		//Texture->PlatformData->SizeX = TextureWidth;
+		//Texture->PlatformData->SizeY = TextureHeight;
+		//Texture->PlatformData->PixelFormat = EPixelFormat::PF_R8G8B8A8;
+		////Texture->PlatformData->PixelFormat = EPixelFormat::PF_B8G8R8A8;
+		//FTexture2DMipMap* NewMipMap = new FTexture2DMipMap();
+		//Texture->PlatformData->Mips.Add(NewMipMap);
+		//NewMipMap->SizeX = TextureWidth;
+		//NewMipMap->SizeY = TextureHeight;
+
+		//Texture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+		//uint8* MipData = (uint8*)Texture->PlatformData->Mips[0].BulkData.Realloc(sizeof(FColor) * TextureWidth * TextureHeight);
+		//FMemory::Memcpy(MipData, SourceColors.GetData(), sizeof(FColor) * SourceColors.Num());
+		//Texture->PlatformData->Mips[0].BulkData.Unlock();
+
+		//Texture->UpdateResource();
+		//Texture->PostEditChange();
+		//Texture->MarkPackageDirty();
+		//FAssetRegistryModule::AssetCreated(Texture);
+
+
+		//USimpleRenderingExampleBlueprintLibrary::UseRDGCompute(GetWorld(), scatter_texture, fill_texture, *&Texture, FLinearColor(i.color));
+		//scatter_texture = Texture;
+		//scatter_texture = UKismetRenderingLibrary::RenderTargetCreateStaticTexture2DEditorOnly(RenderTarget);
+	}
+	
 }
 
 
@@ -308,4 +391,34 @@ TSharedPtr<class IImageWrapper> AInteractiveActor::GetImageWrapperByExtention(co
 		return module.CreateImageWrapper(EImageFormat::JPEG);
 	}
 	return nullptr;
+}
+
+UTexture2D* AInteractiveActor::RenderTarget2Textrue(UTextureRenderTarget2D* InputRenderTarget, UTexture2D* OutTexture)
+{
+	// 获取 Render Target 的大小
+	FTextureRenderTargetResource* RenderTargetResource = InputRenderTarget->GameThread_GetRenderTargetResource();
+	int32 Width = InputRenderTarget->SizeX;
+	int32 Height = InputRenderTarget->SizeY;
+
+	// 创建一个新的 Texture2D 对象
+	OutTexture = UTexture2D::CreateTransient(Width, Height, PF_B8G8R8A8);
+	//if (!Texture)
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("Failed to create Texture2D."));
+	//	return;
+	//}
+
+	// 锁定并读取 Render Target 的像素数据
+	TArray<FColor> OutBMP;
+	RenderTargetResource->ReadPixels(OutBMP);
+
+	// 填充 Texture2D 数据
+	void* TextureData = OutTexture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+	FMemory::Memcpy(TextureData, OutBMP.GetData(), Width * Height * sizeof(FColor));
+	OutTexture->PlatformData->Mips[0].BulkData.Unlock();
+
+	// 更新 Texture2D 资源
+	OutTexture->UpdateResource();
+
+	return OutTexture;
 }

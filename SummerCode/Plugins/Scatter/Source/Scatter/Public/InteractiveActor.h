@@ -7,8 +7,11 @@
 #include "SScatterWidget.h"
 #include "InteractiveActor.generated.h"
 
-struct SubAreaInfo
+USTRUCT(BlueprintType)
+struct FSubAreaInfo
 {
+	GENERATED_USTRUCT_BODY()
+
 	//子区域id
 	int id;
 
@@ -16,9 +19,12 @@ struct SubAreaInfo
 	FString subarea;
 
 	//子区域颜色
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+
 	FVector3f color;
 
 	//填充图像
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* fill_image = nullptr;
 
 	//采样点图
@@ -62,9 +68,9 @@ public:
 
 	void ReSetSubAreas();
 
-	void FillArea(SubAreaInfo info);
+	//void FillArea(SubAreaInfo info);
 
-	void CalculateTexture(SubAreaInfo info);
+	void CalculateTexture();
 	
 
 	//通过路径获取单张图片将之转化成Texture2D
@@ -82,25 +88,33 @@ public:
 	//判断图片类型，png,jpg
 	TSharedPtr<class IImageWrapper> GetImageWrapperByExtention(const FString Path);
 
+	//RT转UTexture
+	UFUNCTION(BlueprintCallable)
+	UTexture2D* RenderTarget2Textrue(UTextureRenderTarget2D* InputRenderTarget, UTexture2D* OutTexture);
+
 
 public:
 	TSharedPtr<SScatterWidget> widget;
 
-	TArray<SubAreaInfo> infos;
-	SubAreaInfo current_info;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FSubAreaInfo> infos;
+	FSubAreaInfo* current_info;
 	
 	TSharedPtr<SWindow> win;
 
 	UTexture2D* origin_divide_image = nullptr;
 	UTexture2D* divide_image = nullptr;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* scatter_texture = nullptr;
 	UPROPERTY(BlueprintReadWrite)
 	UTexture2D* fill_texture = nullptr;
-
+	UPROPERTY(BlueprintReadWrite)
+	UTexture2D* test;
 	UPROPERTY(BlueprintReadWrite)
 	FVector3f color;
+	UPROPERTY(BlueprintReadWrite)
+	UTextureRenderTarget2D* rt;
 
 	//UPROPERTY(BlueprintReadWrite)
 	//TArray<UTexture*> all_images;

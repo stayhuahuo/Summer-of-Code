@@ -45,6 +45,6 @@ void MainCS(uint3 ThreadId : SV_DispatchThreadID)
 	AreaColor = float4(Remap(AreaColor.x, 0, 1, 0.5, 1.5), Remap(AreaColor.y, 0, 1, 0.5, 1.5), Remap(AreaColor.z, 0, 1, 0.5, 1.5), 1);
 	float luminance = dot(IDColor, float3(0.2126, 0.7152, 0.0722));  
 	luminance = lerp(luminance * 0.7, luminance, 0.5);
-	float3 finalColor = IdMask?AreaColor.xyz * IDColor.xyz:IDColor.xyz * luminance ;
-	OutTexture[ThreadId.xy] = float4(finalColor,IdMask);//float4(IDColor.xyz ,1);
+	float3 finalColor = IdMask?AreaColor.xyz * IDColor.xyz:IDColor.xyz;
+    OutTexture[ThreadId.xy] = float4(LinearTosRGB(finalColor), IdMask); //float4(IDColor.xyz ,1);
 }

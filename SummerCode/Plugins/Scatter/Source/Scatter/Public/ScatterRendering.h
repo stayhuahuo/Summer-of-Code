@@ -28,7 +28,7 @@ UCLASS(MinimalAPI, meta = (ScriptName = "ScatterRenderingExample"))
 class USimpleRenderingExampleBlueprintLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
-
+public:
 	UFUNCTION(BlueprintCallable, Category = "ScatterRenderingExample", meta = (WorldContext = "WorldContextObject"))
 	static void UseRDGCompute(const UObject* WorldContextObject, UTexture2D* KMTexture, UTexture2D* InAreaTexture, UTextureRenderTarget2D* OutputRenderTarget, FLinearColor Color);
 
