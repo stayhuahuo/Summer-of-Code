@@ -37,11 +37,13 @@ public:
 
 	TSharedPtr<UTexture2D*> divide_texture;
 	UTexture2D* fill_texture;
+	UTexture2D* fill_texture_1;
 
 
 
 	TSharedPtr<FSlateBrush> divide_brush;
 	TSharedPtr<FSlateBrush> fill_brush;
+	TSharedPtr<FSlateBrush> fill_brush_1;
 
 	TSharedPtr<SComboBox<TSharedPtr<FString>>> sub_areas_combobox;
 

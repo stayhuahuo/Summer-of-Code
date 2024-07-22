@@ -68,6 +68,8 @@ void AInteractiveActor::BeginPlay()
 		//FillArea(*current_info);
 		});
 
+	
+
 	widget.Get()->distribute_spinbox.BindLambda([this](FString category, double value) {
 		*current_info->textrue_para.Find(category) = value;
 		});

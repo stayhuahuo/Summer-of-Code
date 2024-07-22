@@ -14,6 +14,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 {
 	divide_brush = MakeShareable(new FSlateBrush());
 	fill_brush = MakeShareable(new FSlateBrush());
+	fill_brush_1 = MakeShareable(new FSlateBrush());
 
 	FString p = FPaths::ProjectDir() + TEXT("Content/DivideImage/testpic.jpg");
 	divide_texture = MakeShareable(new(UTexture2D*)(LoadTextureFromFile(p)));
@@ -24,6 +25,11 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 	fill_texture = LoadTextureFromFile(p);
 	fill_brush->SetResourceObject(fill_texture);
 	fill_brush->ImageSize = FVector2D(32, 32);
+
+	p = FPaths::ProjectDir() + TEXT("Content/FillImage/patches1_clamp_mask.png");
+	fill_texture_1 = LoadTextureFromFile(p);
+	fill_brush_1->SetResourceObject(fill_texture_1);
+	fill_brush_1->ImageSize = FVector2D(32, 32);
 
 	//分区选择下拉框
 	sub_areas_combobox = 
@@ -216,6 +222,40 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 											]
 
 									]
+									+ SVerticalBox::Slot()
+									.HAlign(HAlign_Center)
+									.VAlign(VAlign_Top)
+									.AutoHeight()
+									[
+										SNew(SVerticalBox)
+											+ SVerticalBox::Slot()
+											.HAlign(HAlign_Center)
+											.VAlign(VAlign_Top)
+											.AutoHeight()
+											[
+												SNew(SImage).Image(fill_brush_1.Get())
+											]
+											+ SVerticalBox::Slot()
+											.HAlign(HAlign_Center)
+											.VAlign(VAlign_Top)
+											.AutoHeight()
+											[
+
+												SNew(SButton)
+													.Text(FText::FromString("select"))
+													.DesiredSizeScale(1)
+													.OnClicked_Lambda([this]()->FReply {
+													fill_image_button.Execute(fill_texture_1);
+													return FReply::Handled();
+														})
+											]
+									]
+
+
+
+
+
+
 							]
 							+ SVerticalBox::Slot()
 							.HAlign(HAlign_Center)
