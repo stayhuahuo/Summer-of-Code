@@ -139,20 +139,23 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t, int k)
 
 	//原图的Mat
 	cv::Mat src = { t->GetSizeX(),t->GetSizeY(),CV_8UC4,pixels };// = UTexture2D; //从UE纹理转化成 cv::Mat
+	raw_ImData->Unlock();
 	//默认为RGBA
 	cv::cvtColor(src,src,cv::COLOR_RGBA2RGB);
+	
 	
 	//不同的图大小不一样，需要做Resize
 	float scale = 2048.0f / src.cols;
 	cv::resize(src,src,cv::Size(2048,src.rows*scale));
-	
-	
-	raw_ImData->Unlock();
-	
+	//模糊操作
+	int iter_num= 10;
+	int kernal_size = 11;
+	for (size_t i = 0; i < iter_num; i++)
+	{
+		cv::GaussianBlur(src, src, cv::Size(kernal_size, kernal_size), 3);
+	}
+	//聚类操作
 	int clusterCount = k;  //需要被分类的个数，默认为4
-
-
-
 	int width = src.cols;
 	int height = src.rows;
 	int dims = src.channels();
@@ -168,15 +171,13 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t, int k)
 	//例如：Scalar(0)为黑色，Scalar(255)为白色，Scalar(0, 255, 0)为绿色
 	cv::Mat labels; //存储聚类后的类别id，数据类型为 int 
 	cv::Mat centers;  //用来存储聚类后的中心点
-
 	// 运行K-Means
 	cv::TermCriteria criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 10, 0.1);
-
-		// 1）TermCriteria::COUNT 最大迭代次数；
-		// 2）TermCriteria::EPS 要求的收敛阈值；
-		// 3）TermCriteria::COUNT + TermCriteria::EPS 达到2个条件之一即可。
-		// maxCount：即最大迭代次数。
-		// epsilon：即要求的收敛阈值。
+	// 1）TermCriteria::COUNT 最大迭代次数；
+	// 2）TermCriteria::EPS 要求的收敛阈值；
+	// 3）TermCriteria::COUNT + TermCriteria::EPS 达到2个条件之一即可。
+	// maxCount：即最大迭代次数。
+	// epsilon：即要求的收敛阈值。
 	cv::kmeans(points, clusterCount, labels, criteria, 3, cv::KMEANS_PP_CENTERS, centers);
 	centers = centers.reshape(dims, clusterCount);
 	// 显示图像分割结果：将样本中分好类的像素赋值给result图片，三通道赋值
@@ -192,9 +193,6 @@ UTexture2D* AInteractiveActor::DivideArea(UTexture2D* t, int k)
 			
 		}
 	}
-
-
-
 	// 创建聚类结果图像
 	cv::Mat output(src.size(), src.type());
 	for (int32 y = 0; y < src.rows; y++)
