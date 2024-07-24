@@ -28,7 +28,7 @@ struct FSubAreaInfo
 	UTexture2D* fill_image = nullptr;
 
 	//采样点图
-	UTexture2D* samples_texture = nullptr;
+	//UTexture2D* samples_texture = nullptr;
 
 	//影响texture参数：群落密度、聚丛大小、聚丛噪声、聚丛模糊
 	TMap<FString, double> textrue_para = { {FString("community_density_value"),1} ,{FString("poly_size"),1},
@@ -62,67 +62,48 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	//kmeans算法颜色聚合，默认为k为4
 	UTexture2D* DivideArea(UTexture2D* t, int k = 4);
 
 	void InitSubInfos(TMap<int, FVector3f>& map);
 
 	void ReSetSubAreas();
 
-	//void FillArea(SubAreaInfo info);
+	////通过路径获取单张图片将之转化成Texture2D
+	//UFUNCTION(BlueprintCallable, Category = "Image")
+	//UTexture2D* LoadTexture2D(const FString path);
 
-	void CalculateTexture();
-	
+	////获取指定路径下的所有图片的名称，类似于XX.JPG
+	//UFUNCTION(BlueprintCallable, Category = "Image")
+	//TArray<FString> GetFolderFiles(FString path);
 
-	//通过路径获取单张图片将之转化成Texture2D
-	UFUNCTION(BlueprintCallable, Category = "Image")
-	UTexture2D* LoadTexture2D(const FString path);
+	////将指定路径下的所有图片转化成Texture2D
+	//UFUNCTION(BlueprintCallable, Category = "Image")
+	//TArray<UTexture2D*> GetAllImageFromFiles(FString Paths);
 
-	//获取指定路径下的所有图片的名称，类似于XX.JPG
-	UFUNCTION(BlueprintCallable, Category = "Image")
-	TArray<FString> GetFolderFiles(FString path);
-
-	//将指定路径下的所有图片转化成Texture2D
-	UFUNCTION(BlueprintCallable, Category = "Image")
-	TArray<UTexture2D*> GetAllImageFromFiles(FString Paths);
-
-	//判断图片类型，png,jpg
-	TSharedPtr<class IImageWrapper> GetImageWrapperByExtention(const FString Path);
+	////判断图片类型，png,jpg
+	//TSharedPtr<class IImageWrapper> GetImageWrapperByExtention(const FString Path);
 
 	//RT转UTexture
 	UFUNCTION(BlueprintCallable)
 	UTexture2D* RenderTarget2Textrue(UTextureRenderTarget2D* InputRenderTarget, UTexture2D* OutTexture);
 
+	UFUNCTION(BlueprintCallable)
+	FColor GetColorFromRT(UTextureRenderTarget2D* RenderTarget, FVector2D uv);
+
 
 public:
 	TSharedPtr<SScatterWidget> widget;
+	TSharedPtr<SWindow> win;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FSubAreaInfo> infos;
-	FSubAreaInfo* current_info;
-	
-	TSharedPtr<SWindow> win;
-
-	UTexture2D* origin_divide_image = nullptr;
-	UTexture2D* divide_image = nullptr;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* scatter_texture = nullptr;
-	UPROPERTY(BlueprintReadWrite)
-	UTexture2D* fill_texture = nullptr;
-	UPROPERTY(BlueprintReadWrite)
-	UTexture2D* test;
-	UPROPERTY(BlueprintReadWrite)
-	FVector3f color;
-	UPROPERTY(BlueprintReadWrite)
-	UTextureRenderTarget2D* rt;
 
-	//UPROPERTY(BlueprintReadWrite)
-	//TArray<UTexture*> all_images;
-
-
-	//UPROPERTY(BlueprintReadWrite)
-	//UMaterialInterface* material = nullptr;
-
+	FSubAreaInfo* current_info;
+	
+	UTexture2D* origin_divide_image = nullptr;
 
 
 };

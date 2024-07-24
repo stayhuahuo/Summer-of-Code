@@ -11,7 +11,6 @@ DECLARE_DELEGATE_OneParam(FillImageButtonClick, UTexture2D*);
 DECLARE_DELEGATE_OneParam(ChangeDivideParam, int);
 DECLARE_DELEGATE_TwoParams(DistributionParams, FString, double);
 DECLARE_DELEGATE_TwoParams(TransformParams, FString, double);
-DECLARE_DELEGATE(CalculateTextureButtonClick);
 
 /**
  * 
@@ -26,26 +25,28 @@ public:
 	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
 
-	//TSharedRef<ITableRow> OnGenerateListView(TSharedPtr<FString> InItem, const TSharedRef<STableViewBase>& OwnerTable);
+	//重载combobox函数
 	TArray <TSharedPtr<FString>>* GetSubAreas(int num = 0);
 	FText GetCurSubArea() const;
 	void OnSelectedSubAreaChanged(TSharedPtr<FString> NewValue, ESelectInfo::Type Info);
-	void OnDivideButtonClicked();
+	
+	//动态设置divide image数量，写的不对
+	//void OnDivideButtonClicked();
+
+	//从指定路径读图为texture
 	UTexture2D* LoadTextureFromFile(FString& path);
+
+	//重置下拉框
 	void ReSetSubAreas();
 
-
+	//divide_image和fill_image，应该写成数组动态设置
 	TSharedPtr<UTexture2D*> divide_texture;
 	UTexture2D* fill_texture;
 	UTexture2D* fill_texture_1;
 
-
-
 	TSharedPtr<FSlateBrush> divide_brush;
 	TSharedPtr<FSlateBrush> fill_brush;
 	TSharedPtr<FSlateBrush> fill_brush_1;
-
-	TSharedPtr<SComboBox<TSharedPtr<FString>>> sub_areas_combobox;
 
 
 	//给InteractiveActor调用的委托
@@ -55,10 +56,14 @@ public:
 	ChangeDivideParam set_k_spinbox;
 	DistributionParams distribute_spinbox;
 	TransformParams transform_spinbox;
-	CalculateTextureButtonClick calculate_texture_button;
 
-	//相关参数
+	//子区域下拉框
+	TSharedPtr<SComboBox<TSharedPtr<FString>>> sub_areas_combobox;
+
+	//子区域下拉框列表
 	TArray<TSharedPtr<FString>> area_array;
+
+	//选中的子区域
 	FText selected_sub_area;
 
 };

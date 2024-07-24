@@ -87,7 +87,6 @@ void USimpleRenderingExampleBlueprintLibrary::UseRDGCompute(const UObject* World
 	check(IsInGameThread());
 
 	FTexture2DRHIRef RenderTargetRHI = OutputRenderTarget->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
-	//FTexture2DRHIRef RenderTargetRHI = OutputRenderTarget->GetResource()->TextureRHI->GetTexture2D();
 	FTexture2DRHIRef KMTextureRHI = KMTexture->GetResource()->TextureRHI->GetTexture2D();
 	FTexture2DRHIRef InTextureRHI = InAreaTexture->GetResource()->TextureRHI->GetTexture2D();
 	ENQUEUE_RENDER_COMMAND(CaptureCommand)
@@ -95,9 +94,6 @@ void USimpleRenderingExampleBlueprintLibrary::UseRDGCompute(const UObject* World
 			[KMTextureRHI, InTextureRHI, RenderTargetRHI, Color](FRHICommandListImmediate& RHICmdList) {
 				RDGCompute(RHICmdList, KMTextureRHI, InTextureRHI,RenderTargetRHI, Color);
 			});
-	//FRenderCommandFence fence;
-	//fence.BeginFence();
-	//fence.Wait();
 
 }
 

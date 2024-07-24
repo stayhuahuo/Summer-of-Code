@@ -42,13 +42,20 @@ void AInteractiveActor::BeginPlay()
 
 
 	widget.Get()->divide_image_button.BindLambda([this](UTexture2D* t) {
-		//if (divide_image == nullptr)
-		origin_divide_image = t;
-		divide_image = DivideArea(t);
+		if (origin_divide_image == nullptr)
+		{
+			origin_divide_image = t;
+			scatter_texture = DivideArea(t);
+			scatter_texture->UpdateResource();
+		}
 		});
 
 	widget.Get()->set_k_spinbox.BindLambda([this](int k) {
-		divide_image = DivideArea(nullptr, k);
+		if (origin_divide_image != nullptr)
+		{
+			scatter_texture = DivideArea(nullptr, k);
+			scatter_texture->UpdateResource();
+		}
 		});
 
 	widget.Get()->sub_area_combobox.BindLambda([this](FString subarea) {
@@ -63,48 +70,22 @@ void AInteractiveActor::BeginPlay()
 		});
 
 	widget.Get()->fill_image_button.BindLambda([this](UTexture2D* t) {
-		fill_texture = t;
-		current_info->fill_image = t;
-		//FillArea(*current_info);
+		if (current_info != nullptr)
+			current_info->fill_image = t;
 		});
 
 	
 
 	widget.Get()->distribute_spinbox.BindLambda([this](FString category, double value) {
-		*current_info->textrue_para.Find(category) = value;
+		if (current_info != nullptr)
+			*current_info->textrue_para.Find(category) = value;
 		});
 
 	widget.Get()->transform_spinbox.BindLambda([this](FString category, double value) {
-		*current_info->mesh_para.Find(category) = value;
+		if (current_info != nullptr)
+			*current_info->mesh_para.Find(category) = value;
 		});
 	
-	widget.Get()->calculate_texture_button.BindLambda([this]() {
-		CalculateTexture();
-		color = current_info->color;
-		
-
-
-		//FString MaterialPath = TEXT("Material'/Game/DivideImage/0001.0001'");
-		//material = LoadObject<UMaterialInterface>(nullptr, *MaterialPath);
-		});
-	//UTexture2D* test = UTexture2D::CreateTransient(2048, 2048, PF_R8G8B8A8);
-	//test->MipGenSettings = TMGS_NoMipmaps;
-	//test->CompressionSettings = TC_EditorIcon;
-	//test->SRGB = true;
-	//test->AddToRoot();
-	//FTexture2DMipMap& Mip = test->PlatformData->Mips[0];
-	//void* Data = Mip.BulkData.Lock(LOCK_READ_WRITE);
-	//FColor* FormData = static_cast<FColor*>(Data);
-	//for (int32 Y = 0; Y < 2048; Y++)
-	//{
-	//	for (int32 X = 0; X < 2048; X++)
-	//	{
-	//		FormData[Y * 2048 + X] = FColor::White;
-	//	}
-	//}
-	//Mip.BulkData.Unlock();
-	//test->UpdateResource();
-	//te = MakeShareable(test);
 }
 
 void AInteractiveActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -253,145 +234,73 @@ void AInteractiveActor::ReSetSubAreas()
 	widget.Get()->ReSetSubAreas();
 }
 
-//void AInteractiveActor::FillArea(FSubAreaInfo info)
+
+//UTexture2D* AInteractiveActor::LoadTexture2D(const FString path)
 //{
-//	//用currentinfo.fillimage和divide_image求交，得到采样点图info.samples_texture
-//	//UTexture2D* t=UKismetRenderingLibrary::RenderTargetCreateStaticTexture2DEditorOnly(GetWorld(),Rendert,)
+//	UTexture2D* Texture = nullptr;
+//	if (!FPlatformFileManager::Get().GetPlatformFile().FileExists(*path))
+//	{
+//		return nullptr;
+//	}
+//	TArray<uint8> RawFileData;
+//	if (!FFileHelper::LoadFileToArray(RawFileData, *path))
+//	{
+//		return nullptr;
+//	}
+//	TSharedPtr<IImageWrapper> ImageWrapper = GetImageWrapperByExtention(path);
+//	if (ImageWrapper.IsValid() && ImageWrapper->SetCompressed(RawFileData.GetData(), RawFileData.Num()))
+//	{
+//		TArray<uint8> UncompressedRGBA;
+//		if (ImageWrapper->GetRaw(ERGBFormat::RGBA, 8, UncompressedRGBA))
+//		{
+//			Texture = UTexture2D::CreateTransient(ImageWrapper->GetWidth(), ImageWrapper->GetHeight(), PF_R8G8B8A8);
+//			if (Texture != nullptr)
+//			{
+//				void* TextureData = Texture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+//				FMemory::Memcpy(TextureData, UncompressedRGBA.GetData(), UncompressedRGBA.Num());
+//				Texture->PlatformData->Mips[0].BulkData.Unlock();
+//				Texture->UpdateResource();
+//			}
+//		}
+//	}
+//	return Texture;
 //}
-
-void AInteractiveActor::CalculateTexture()
-{
-	//通过info中各种参数及info.samples_texture计算最终纹理scatter_texture
-	scatter_texture = divide_image;
-	current_info;
-	//return;
-	//UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>();
-	//RenderTarget->InitAutoFormat(1024, 1024);
-	//RenderTarget->UpdateResourceImmediate(true); 
-
-	//FString p = FPaths::ProjectDir() + TEXT("Content/DivideImage/Colormask_0_03.png");
-	//te = LoadTexture2D(p);
-
-	for (auto& i : infos)
-	{
-		if (i.fill_image == nullptr)
-			continue;
-		//UTexture2D* in_kmeans_texture2D = NewObject<UTexture2D>(scatter_texture);
-		//FString TextureName = "Test";
-		//FString PackName = FString::Printf(TEXT("/Game/%s"), *TextureName);
-		//UPackage* Package = CreatePackage(*PackName);
-		//Package->FullyLoad();
-		//UTexture2D* Texture = NewObject<UTexture2D>(Package, *TextureName, RF_Public | RF_Standalone | RF_MarkAsRootSet);
-
-		//static const int32 TextureWidth = 2048;
-		//static const int32 TextureHeight = 2048;
-		//TArray<FColor> SourceColors;
-		//SourceColors.Init(FColor::White, TextureWidth * TextureHeight);
-
-		////Source 
-		//Texture->MipGenSettings = TextureMipGenSettings::TMGS_NoMipmaps;
-		//Texture->Source.Init(TextureWidth, TextureHeight, 1, 1, ETextureSourceFormat::TSF_BGRA8);
-		////Texture->Source.Init(TextureWidth, TextureHeight, 1, 1, ETextureSourceFormat::TSF_BGRA8);
-		//uint8* SourceData = Texture->Source.LockMip(0);
-		//FMemory::Memcpy(SourceData, SourceColors.GetData(), sizeof(FColor) * SourceColors.Num());
-		//Texture->Source.UnlockMip(0);
-
-		////PlatformData
-		//Texture->PlatformData = new FTexturePlatformData();
-		//Texture->PlatformData->SizeX = TextureWidth;
-		//Texture->PlatformData->SizeY = TextureHeight;
-		//Texture->PlatformData->PixelFormat = EPixelFormat::PF_R8G8B8A8;
-		////Texture->PlatformData->PixelFormat = EPixelFormat::PF_B8G8R8A8;
-		//FTexture2DMipMap* NewMipMap = new FTexture2DMipMap();
-		//Texture->PlatformData->Mips.Add(NewMipMap);
-		//NewMipMap->SizeX = TextureWidth;
-		//NewMipMap->SizeY = TextureHeight;
-
-		//Texture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
-		//uint8* MipData = (uint8*)Texture->PlatformData->Mips[0].BulkData.Realloc(sizeof(FColor) * TextureWidth * TextureHeight);
-		//FMemory::Memcpy(MipData, SourceColors.GetData(), sizeof(FColor) * SourceColors.Num());
-		//Texture->PlatformData->Mips[0].BulkData.Unlock();
-
-		//Texture->UpdateResource();
-		//Texture->PostEditChange();
-		//Texture->MarkPackageDirty();
-		//FAssetRegistryModule::AssetCreated(Texture);
-
-
-		//USimpleRenderingExampleBlueprintLibrary::UseRDGCompute(GetWorld(), scatter_texture, fill_texture, *&Texture, FLinearColor(i.color));
-		//scatter_texture = Texture;
-		//scatter_texture = UKismetRenderingLibrary::RenderTargetCreateStaticTexture2DEditorOnly(RenderTarget);
-	}
-	
-}
-
-
-UTexture2D* AInteractiveActor::LoadTexture2D(const FString path)
-{
-	UTexture2D* Texture = nullptr;
-	if (!FPlatformFileManager::Get().GetPlatformFile().FileExists(*path))
-	{
-		return nullptr;
-	}
-	TArray<uint8> RawFileData;
-	if (!FFileHelper::LoadFileToArray(RawFileData, *path))
-	{
-		return nullptr;
-	}
-	TSharedPtr<IImageWrapper> ImageWrapper = GetImageWrapperByExtention(path);
-	if (ImageWrapper.IsValid() && ImageWrapper->SetCompressed(RawFileData.GetData(), RawFileData.Num()))
-	{
-		TArray<uint8> UncompressedRGBA;
-		if (ImageWrapper->GetRaw(ERGBFormat::RGBA, 8, UncompressedRGBA))
-		{
-			Texture = UTexture2D::CreateTransient(ImageWrapper->GetWidth(), ImageWrapper->GetHeight(), PF_R8G8B8A8);
-			if (Texture != nullptr)
-			{
-				void* TextureData = Texture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
-				FMemory::Memcpy(TextureData, UncompressedRGBA.GetData(), UncompressedRGBA.Num());
-				Texture->PlatformData->Mips[0].BulkData.Unlock();
-				Texture->UpdateResource();
-			}
-		}
-	}
-	return Texture;
-}
-
-TArray<FString> AInteractiveActor::GetFolderFiles(FString path)
-{
-	TArray<FString> files;
-	FPaths::NormalizeDirectoryName(path);
-	IFileManager& FileManager = IFileManager::Get();
-	FString FinalPath = path / TEXT("*");
-	FileManager.FindFiles(files, *FinalPath, true, true);
-	return files;
-}
-
-TArray<UTexture2D*> AInteractiveActor::GetAllImageFromFiles(FString Paths)
-{
-	TArray<FString> ImgPaths = GetFolderFiles(Paths);
-	TArray<UTexture2D*> Texture2DArr;
-	for (auto path : ImgPaths)
-	{
-		UTexture2D* Texture2D = LoadTexture2D(Paths + "/" + path);
-		Texture2DArr.Add(Texture2D);
-	}
-	return Texture2DArr;
-}
-
-TSharedPtr<class IImageWrapper> AInteractiveActor::GetImageWrapperByExtention(const FString Path)
-{
-	IImageWrapperModule& module = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-	if (Path.EndsWith(".png"))
-	{
-		return module.CreateImageWrapper(EImageFormat::PNG);
-	}
-	if (Path.EndsWith(".jpg"))
-	{
-		return module.CreateImageWrapper(EImageFormat::JPEG);
-	}
-	return nullptr;
-}
+//
+//TArray<FString> AInteractiveActor::GetFolderFiles(FString path)
+//{
+//	TArray<FString> files;
+//	FPaths::NormalizeDirectoryName(path);
+//	IFileManager& FileManager = IFileManager::Get();
+//	FString FinalPath = path / TEXT("*");
+//	FileManager.FindFiles(files, *FinalPath, true, true);
+//	return files;
+//}
+//
+//TArray<UTexture2D*> AInteractiveActor::GetAllImageFromFiles(FString Paths)
+//{
+//	TArray<FString> ImgPaths = GetFolderFiles(Paths);
+//	TArray<UTexture2D*> Texture2DArr;
+//	for (auto path : ImgPaths)
+//	{
+//		UTexture2D* Texture2D = LoadTexture2D(Paths + "/" + path);
+//		Texture2DArr.Add(Texture2D);
+//	}
+//	return Texture2DArr;
+//}
+//
+//TSharedPtr<class IImageWrapper> AInteractiveActor::GetImageWrapperByExtention(const FString Path)
+//{
+//	IImageWrapperModule& module = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+//	if (Path.EndsWith(".png"))
+//	{
+//		return module.CreateImageWrapper(EImageFormat::PNG);
+//	}
+//	if (Path.EndsWith(".jpg"))
+//	{
+//		return module.CreateImageWrapper(EImageFormat::JPEG);
+//	}
+//	return nullptr;
+//}
 
 UTexture2D* AInteractiveActor::RenderTarget2Textrue(UTextureRenderTarget2D* InputRenderTarget, UTexture2D* OutTexture)
 {
@@ -421,4 +330,21 @@ UTexture2D* AInteractiveActor::RenderTarget2Textrue(UTextureRenderTarget2D* Inpu
 	OutTexture->UpdateResource();
 
 	return OutTexture;
+}
+
+FColor AInteractiveActor::GetColorFromRT(UTextureRenderTarget2D* RenderTarget, FVector2D uv)
+{
+	FTextureRenderTargetResource* RenderTargetResource = RenderTarget->GameThread_GetRenderTargetResource();
+	int32 Width = RenderTarget->SizeX;
+	int32 Height = RenderTarget->SizeY;
+
+	TArray<FColor> OutBMP;
+	RenderTargetResource->ReadPixels(OutBMP);
+
+	int32 X = FMath::Clamp(static_cast<int32>(uv.X * RenderTarget->SizeX), 0, RenderTarget->SizeX - 1);
+	int32 Y = FMath::Clamp(static_cast<int32>(uv.Y * RenderTarget->SizeY), 0, RenderTarget->SizeY - 1);
+
+	FColor PixelColor = OutBMP[Y * RenderTarget->SizeX + X];
+
+	return PixelColor;
 }
