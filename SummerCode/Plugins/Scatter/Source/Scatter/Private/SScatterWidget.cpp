@@ -29,6 +29,7 @@ void SScatterWidget::Construct(const FArguments& InArgs)
 	fill_brush_1->SetResourceObject(fill_texture_1);
 	fill_brush_1->ImageSize = FVector2D(32, 32);
 
+
 	//分区选择下拉框
 	sub_areas_combobox = 
 		SNew(SComboBox<TSharedPtr<FString>>)

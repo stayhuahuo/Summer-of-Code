@@ -45,6 +45,7 @@ void AInteractiveActor::BeginPlay()
 		if (origin_divide_image == nullptr)
 		{
 			origin_divide_image = t;
+			//UTexture2D* t = New<UTexture2D>();
 			scatter_texture = DivideArea(t);
 			scatter_texture->UpdateResource();
 		}
